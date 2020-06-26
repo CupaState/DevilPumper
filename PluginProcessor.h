@@ -11,9 +11,10 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Compressor.h"
 
-#define MAKEUPGAIN_ID "MakeUpGain_ID"
-#define MAKEUPGAIN_NAME "MAKEUPGAIN_NAME"
+#define GAIN_ID "Gain_ID"
+#define GAIN_NAME "GAIN_NAME"
 #define ATTACK_ID "Attack_ID"
 #define ATTACK_NAME "Attack_NAME"
 #define RELEASE_ID "Release_ID"
@@ -24,6 +25,11 @@
 #define RATIO_NAME "Ratio_NAME"
 #define KNEE_ID "Knee_ID"
 #define KNEE_NAME "Knee_NAME"
+#define MAKEUP_ID "MakeUp_ID"
+#define MAKEUP_NAME "MakeUp_NAME"
+#define PROCESSOR_ID "Pocessor_ID"
+#define PROCESSOR_NAME "Processor_NAME"
+
 
 //==============================================================================
 /**
@@ -73,24 +79,19 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 
 public:
-
     AudioProcessorValueTreeState treeState;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
+    std::unique_ptr<Compressor>processorComp = std::make_unique<Compressor>(PROCESSOR_ID);
 
-    double mAttackTime{ 5.0 };
-    double mReleaseTime{ 25.0 };
+    float pAttackTime{ 5.0 };
+    float pReleaseTime{ 25.0 };
 
-    double mThreshold{ -3.0 };
-    double mRatio{ 0.0 };
-    double mKneeWidth{ 5.0 };
+    float pThreshold{ -3.0 };
+    float pRatio{ 0.0 };
+    float pKneeWidth{ 5.0 };
 
-    double mInputGain{ 0.0 };
-    double mOutputGain{ 0.0 };
-    double mMakeUpGain{ 0.0 };
-    double mInputLevel{ 0.0 };
-    double mOutputLevel{ 0.0 };
-    double mPreviousOutputLevel{ 0.0 };
+    float pMakeUpGain{ 0.0 };
+    float pGain{ 0.0 };
 
-    double mControlVoltage{ 0.0 };
-    double mSampleRate{ 44100 };
+    int numChannels;
 };
