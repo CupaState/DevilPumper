@@ -12,8 +12,8 @@
 
 #include <JuceHeader.h>
 
-#define GAIN_ID "Gain_ID"
-#define GAIN_NAME "GAIN_NAME"
+#define MAKEUPGAIN_ID "MakeUpGain_ID"
+#define MAKEUPGAIN_NAME "MAKEUPGAIN_NAME"
 #define ATTACK_ID "Attack_ID"
 #define ATTACK_NAME "Attack_NAME"
 #define RELEASE_ID "Release_ID"
@@ -22,6 +22,8 @@
 #define THRESHOLD_NAME "Threshold_NAME"
 #define RATIO_ID "Ratio_ID"
 #define RATIO_NAME "Ratio_NAME"
+#define KNEE_ID "Knee_ID"
+#define KNEE_NAME "Knee_NAME"
 
 //==============================================================================
 /**
@@ -78,9 +80,17 @@ public:
     double mAttackTime{ 5.0 };
     double mReleaseTime{ 25.0 };
 
-    double mThreshold{ 0.0 };
+    double mThreshold{ -3.0 };
     double mRatio{ 0.0 };
+    double mKneeWidth{ 5.0 };
 
-    double mOutputGain{ 0 };
+    double mInputGain{ 0.0 };
+    double mOutputGain{ 0.0 };
+    double mMakeUpGain{ 0.0 };
+    double mInputLevel{ 0.0 };
+    double mOutputLevel{ 0.0 };
+    double mPreviousOutputLevel{ 0.0 };
+
+    double mControlVoltage{ 0.0 };
     double mSampleRate{ 44100 };
 };

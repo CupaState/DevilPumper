@@ -31,7 +31,7 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
 AudioProcessorValueTreeState::ParameterLayout DevilPumperInfinityAudioProcessor::createParameter()
 {
     std::vector<std::unique_ptr<RangedAudioParameter>> parameter;
-    auto gainParameter = std::make_unique<AudioParameterFloat>(GAIN_ID, GAIN_NAME, -50.0, 10.0, 0.0);
+    auto gainParameter = std::make_unique<AudioParameterFloat>(MAKEUPGAIN_ID, MAKEUPGAIN_NAME, -50.0, 10.0, 0.0);
     parameter.push_back(std::move(gainParameter));
 
     auto attackParameter = std::make_unique<AudioParameterFloat>(ATTACK_ID, ATTACK_NAME, 1.0, 250.0, 5.0);
@@ -45,6 +45,9 @@ AudioProcessorValueTreeState::ParameterLayout DevilPumperInfinityAudioProcessor:
 
     auto ratioParameter = std::make_unique<AudioParameterFloat>(RATIO_ID, RATIO_NAME, 0.0, 100.0, 0.0);
     parameter.push_back(std::move(ratioParameter));
+
+    auto kneeParameter = std::make_unique<AudioParameterFloat>(KNEE_ID, KNEE_NAME, 0.0, 72.0, 5.0);
+    parameter.push_back(std::move(kneeParameter));
 
     return { parameter.begin(), parameter.end() };
 }
@@ -118,15 +121,18 @@ void DevilPumperInfinityAudioProcessor::changeProgramName(int index, const Strin
 //==============================================================================
 void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    mSampleRate = sampleRate;
+    mSampleRate = getSampleRate();
 
     mAttackTime = *treeState.getRawParameterValue(ATTACK_ID);
 
-    mOutputGain = pow(10, *treeState.getRawParameterValue(GAIN_ID) / 20);
+    //mMakeUpGain = pow(10, *treeState.getRawParameterValue(MAKEUPGAIN_ID) / 20);
+    mMakeUpGain = *treeState.getRawParameterValue(MAKEUPGAIN_ID);
 
     mThreshold = *treeState.getRawParameterValue(THRESHOLD_ID);
 
     mRatio = *treeState.getRawParameterValue(RATIO_ID);
+
+    mKneeWidth = *treeState.getRawParameterValue(KNEE_ID);
 }
 
 void DevilPumperInfinityAudioProcessor::releaseResources()
@@ -161,28 +167,106 @@ bool DevilPumperInfinityAudioProcessor::isBusesLayoutSupported(const BusesLayout
 
 void DevilPumperInfinityAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
-
-    /*float alphaAttack = exp(-1 / (0.001 * cSampleRate * cAttack));
-    float alphaRelease = exp(-1 / (0.001 * cSampleRate * cRelease));*/
-
     ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    const int totalNumInputChannels = getTotalNumInputChannels();
+    const int totalNumOutputChannels = getTotalNumOutputChannels();
 
-    float curGain = pow(10, *treeState.getRawParameterValue(GAIN_ID) / 20.0);
+    int bufferSize = buffer.getNumSamples();
+    int numChannels = buffer.getNumChannels();
+    int MonoChannel = round(numChannels / 2);
 
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+
+    AudioSampleBuffer inputBuffer(MonoChannel, bufferSize);
+    //auto totalNumInputChannels = getTotalNumInputChannels();
+    //auto totalNumOutputChannels = getTotalNumOutputChannels();
+
+    inputBuffer.clear();
+
+    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
-    if (curGain == mOutputGain)
+
+    //float curGain = pow(10, *treeState.getRawParameterValue(GAIN_ID) / 20.0);
+
+    //for (auto i = numChannels; i < numChannels; ++i)
+    //    buffer.clear(i, 0, bufferSize);
+
+    for (int channel = 0; channel < MonoChannel; ++channel)
     {
-        buffer.applyGain(curGain);
+        if (mThreshold < 0)
+        {
+            inputBuffer.addFrom(channel, 0, buffer, channel * 2.0, bufferSize, 0.5);
+            inputBuffer.addFrom(channel, 0, buffer, channel * 2.0 + 1.0, bufferSize, 0.5);
+
+            float alphaAttack = exp(-1 / (0.001 * mSampleRate * mAttackTime));
+            float alphaRelease = exp(-1 / (0.001 * mSampleRate * mReleaseTime));
+
+            for (int sample = 0; sample < bufferSize; ++sample)
+            {
+                //Level detection- estimate level using peak detector
+                if (fabs(buffer.getWritePointer(channel)[sample]) < 0.000001)
+                {
+                    mInputGain = -120.0;
+                }
+                else
+                {
+                    mInputGain = 20 * log10(fabs(buffer.getWritePointer(channel)[sample]));
+                }
+                
+                // Gain computer - apply input/output curve with kneewidth
+                   // Incorporating the SOFT KNEE
+                if (2 * (mInputGain - mThreshold) >= mKneeWidth)
+                {
+                    // above knee
+                    mOutputGain = mThreshold + (mInputGain - mThreshold) / mRatio;
+                }
+                else if (2 * fabs(mInputGain - mThreshold) <= mKneeWidth)
+                {
+                    // in knee
+                    mOutputGain = mInputGain + (1 / mRatio - 1) * pow(mInputGain - mThreshold + mKneeWidth / 2, 2) / (2 * mKneeWidth);
+                }
+                else // below knee
+                {
+                    mOutputGain = mInputGain;
+                }
+                mInputLevel = mInputGain - mOutputGain;
+
+                //Ballistics- smoothing of the gain
+                if (mInputLevel > mPreviousOutputLevel)
+                {
+                    mOutputLevel = alphaAttack * mPreviousOutputLevel + (1 - alphaAttack) * mInputLevel;
+                }
+                else
+                {
+                    mOutputLevel = alphaRelease * mPreviousOutputLevel + (1 - alphaRelease) * mInputLevel;
+                }
+
+                //find control voltage
+                mControlVoltage = pow(10, (mMakeUpGain - mOutputLevel) / 20.0);
+                mPreviousOutputLevel = mOutputLevel;
+
+                // apply control voltage to both channels
+                buffer.getWritePointer(2 * channel + 0)[sample] *= mControlVoltage;
+                buffer.getWritePointer(2 * channel + 1)[sample] *= mControlVoltage;
+            }
+        }
+        else // if threshold = 0, still apply make up gain.
+        {
+            buffer.applyGain(pow(10, (mMakeUpGain) / 20.0));
+        }
+
     }
-    else
-    {
-        buffer.applyGainRamp(0, buffer.getNumSamples(), mOutputGain, curGain);
-        mOutputGain = curGain;
-    }
+
+
+    //if (curGain == mMakeUpGain)
+    //{
+    //    buffer.applyGain(curGain);
+    //}
+    //else
+    //{
+    //    buffer.applyGainRamp(0, buffer.getNumSamples(), mOutputGain, curGain);
+    //    mOutputGain = curGain;
+    //}
 }
 
 //==============================================================================

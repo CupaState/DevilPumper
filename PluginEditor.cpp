@@ -15,20 +15,21 @@
 DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor(DevilPumperInfinityAudioProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
-    slOutputGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, GAIN_ID, slOutputGain);
+    slMakeUpGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, MAKEUPGAIN_ID, slMakeUpGain);
     slAttackTimeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, ATTACK_ID, slAttackTime);
     slReleaseTimeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, RELEASE_ID, slRelease);
     slThresholdAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, THRESHOLD_ID, slThreshold);
     slRatioAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, RATIO_ID, slRatio);
+    slKneeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, KNEE_ID, slKneeWidth);
 
     //SLIDERS
 
-    addAndMakeVisible(slOutputGain);
-    slOutputGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slOutputGain.setTextValueSuffix("dB");
-    slOutputGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slOutputGain.setRange(-50.0, 10.0);
-    slOutputGain.setSize(10, 400);
+    addAndMakeVisible(slMakeUpGain);
+    slMakeUpGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
+    slMakeUpGain.setTextValueSuffix("dB");
+    slMakeUpGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
+    slMakeUpGain.setRange(-50.0, 10.0);
+    slMakeUpGain.setSize(10, 400);
 
     addAndMakeVisible(slAttackTime);
     slAttackTime.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
@@ -58,27 +59,37 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slRatio.setRange(0.0, 100.0);
     slRatio.setValue(0.0);
 
+    addAndMakeVisible(slKneeWidth);
+    slKneeWidth.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
+    slKneeWidth.setTextValueSuffix("dB");
+    slKneeWidth.setSliderStyle(Slider::SliderStyle::LinearVertical);
+    slKneeWidth.setRange(0.0, 72.0);
+    slKneeWidth.setValue(5.0);
+
     //LABELS
 
-    addAndMakeVisible(lOutputGain);
+    addAndMakeVisible(lMakeUpGain);
     addAndMakeVisible(lAttack);
     addAndMakeVisible(lRelease);
     addAndMakeVisible(lThreshold);
     addAndMakeVisible(lRatio);
+    addAndMakeVisible(lKneeWidth);
 
-    lOutputGain.setText("Output Gain", dontSendNotification);
+    lMakeUpGain.setText("Output Gain", dontSendNotification);
     lAttack.setText("Attack", dontSendNotification);
     lRelease.setText("Release", dontSendNotification);
     lThreshold.setText("Threshold", dontSendNotification);
     lRatio.setText("Ratio", dontSendNotification);
+    lKneeWidth.setText("Knee", dontSendNotification);
 
-    lOutputGain.attachToComponent(&slOutputGain, true);
-    lAttack.attachToComponent(&slAttackTime, false);
+    lMakeUpGain.attachToComponent(&slMakeUpGain, true);
+    lAttack.attachToComponent(&slAttackTime, true);
     lRelease.attachToComponent(&slRelease, true);
     lThreshold.attachToComponent(&slThreshold, true);
     lRatio.attachToComponent(&slRatio, true);
+    lKneeWidth.attachToComponent(&slKneeWidth, true);
 
-    setSize(1000, 600);
+    setSize(1200, 600);
 }
 
 DevilPumperInfinityAudioProcessorEditor::~DevilPumperInfinityAudioProcessorEditor()
@@ -97,11 +108,12 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
     Rectangle<int>bounds = getLocalBounds();
     FlexBox flexBox;
 
-    flexBox.items.add(FlexItem(200, 100, slOutputGain));
+    flexBox.items.add(FlexItem(200, 100, slMakeUpGain));
     flexBox.items.add(FlexItem(200, 100, slAttackTime));
     flexBox.items.add(FlexItem(200, 100, slThreshold));
     flexBox.items.add(FlexItem(200, 100, slRelease));
     flexBox.items.add(FlexItem(200, 100, slRatio));
+    flexBox.items.add(FlexItem(200, 100, slKneeWidth));
 
 
     flexBox.performLayout(bounds);
@@ -109,9 +121,9 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
 
 void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 {
-    if (slider == &slOutputGain)
+    if (slider == &slMakeUpGain)
     {
-        processor.mOutputGain = slOutputGain.getValue();
+        processor.mMakeUpGain = slMakeUpGain.getValue();
     }
     else if (slider == &slAttackTime)
     {
@@ -127,6 +139,10 @@ void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
     }
     else if (slider == &slRatio)
     {
-        processor.mRatio = pow(10, slRatio.getValue());
+        processor.mRatio = slRatio.getValue();
+    }
+    else if (slider == &slKneeWidth)
+    {
+        processor.mKneeWidth = slKneeWidth.getValue();
     }
 }

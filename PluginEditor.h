@@ -31,23 +31,26 @@ public:
 
 private:
     DevilPumperInfinityAudioProcessor& processor;
-    Slider slOutputGain;
+    Slider slMakeUpGain;
     Slider slAttackTime;
     Slider slRelease;
     Slider slThreshold;
     Slider slRatio;
+    Slider slKneeWidth;
 
     Label lRelease;
-    Label lOutputGain;
+    Label lMakeUpGain;
     Label lAttack;
     Label lThreshold;
     Label lRatio;
+    Label lKneeWidth;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
 public:
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slOutputGainAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slMakeUpGainAttach;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slAttackTimeAttach;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slReleaseTimeAttach;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slThresholdAttach;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slRatioAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slKneeAttach;
 };
