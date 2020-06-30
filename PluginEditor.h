@@ -48,12 +48,4 @@ private:
     Label lGain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
-public:
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slMakeUpGainAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slAttackTimeAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slReleaseTimeAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slThresholdAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slRatioAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slKneeAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slGainAttach;
 };

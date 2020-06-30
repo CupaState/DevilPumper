@@ -13,23 +13,6 @@
 #include <JuceHeader.h>
 #include "Compressor.h"
 
-#define GAIN_ID "Gain_ID"
-#define GAIN_NAME "GAIN_NAME"
-#define ATTACK_ID "Attack_ID"
-#define ATTACK_NAME "Attack_NAME"
-#define RELEASE_ID "Release_ID"
-#define RELEASE_NAME "Release_NAME"
-#define THRESHOLD_ID "Threshold_ID"
-#define THRESHOLD_NAME "Threshold_NAME"
-#define RATIO_ID "Ratio_ID"
-#define RATIO_NAME "Ratio_NAME"
-#define KNEE_ID "Knee_ID"
-#define KNEE_NAME "Knee_NAME"
-#define MAKEUP_ID "MakeUp_ID"
-#define MAKEUP_NAME "MakeUp_NAME"
-#define PROCESSOR_ID "Pocessor_ID"
-#define PROCESSOR_NAME "Processor_NAME"
-
 
 //==============================================================================
 /**
@@ -102,8 +85,6 @@ private:
 
 public:
     ScopedPointer <Compressor> processorComp;
-    AudioProcessorValueTreeState treeState;
-    AudioProcessorValueTreeState::ParameterLayout createParameter();
 
     float pAttackTime;
     float pReleaseTime;

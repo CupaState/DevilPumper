@@ -15,14 +15,6 @@
 DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor(DevilPumperInfinityAudioProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
-    slMakeUpGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, MAKEUP_ID, slMakeUpGain);
-    slAttackTimeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, ATTACK_ID, slAttackTime);
-    slReleaseTimeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, RELEASE_ID, slRelease);
-    slThresholdAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, THRESHOLD_ID, slThreshold);
-    slRatioAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, RATIO_ID, slRatio);
-    slKneeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, KNEE_ID, slKneeWidth);
-    slGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, GAIN_ID, slGain);
-
     //SLIDERS
 
     addAndMakeVisible(slMakeUpGain);
