@@ -25,14 +25,14 @@ void Compressor::processBlock(AudioSampleBuffer& buffer)
 {
     int bufferSize = buffer.getNumSamples();
     int numChannels = buffer.getNumChannels();
-    int MonoChannel = round(numChannels / 2); // number of stereo channels
+    int M = round(numChannels / 2); // number of stereo channels
 
     // create blank input buffer to add to
-    AudioSampleBuffer inputBuffer(MonoChannel, bufferSize);
+    AudioSampleBuffer inputBuffer(M, bufferSize);
     inputBuffer.clear();
 
 
-    for (int channel = 0; channel < MonoChannel; ++channel) //For each channel pair of channels
+    for (int channel = 0; channel < M; ++channel) //For each channel pair of channels
     {
         if (mThreshold < 0)
         {
@@ -73,6 +73,7 @@ void Compressor::processBlock(AudioSampleBuffer& buffer)
                 {
                     mOutputGain = mInputGain;
                 }
+
                 mInputLevel = mInputGain - mOutputGain;
 
                 //Ballistics- smoothing of the gain
@@ -115,5 +116,6 @@ void Compressor::setParameters(float ratio, float threshold, float attack, float
 void Compressor::prepareToPlay(double samplerate, int samplesPerBlock, int numInputChannels)
 {
     mSampleRate = samplerate;
+    mPreviousOutputLevel = 0;
 }
 

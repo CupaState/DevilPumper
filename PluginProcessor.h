@@ -74,24 +74,46 @@ public:
     void getStateInformation(MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    // Setter Functions for each parameter
+
+    void setMakeUpGain(float makeUpGain) { pMakeUpGain = Decibels::decibelsToGain(makeUpGain); }
+    void setKneeWidth(float KneeWidth) { pKneeWidth = KneeWidth; }
+    void setGain(float Gain) { pGain = Decibels::decibelsToGain(Gain); }
+    void setThreshold(float Threshold) { pThreshold = Threshold; }
+    void setRatio(float Ratio) { pRatio = Ratio; }
+    void setAttack(float Attack) { pAttackTime = Attack; }
+    void setRelease(float Release) { pReleaseTime = Release; }
+
+
+    //==============================================================================
+    // Getter Functions for each parameter
+
+    float getMakeUpGain() { return Decibels::decibelsToGain(pMakeUpGain); }
+    float getKneeWidth() { return pKneeWidth; }
+    float getGain() { return Decibels::decibelsToGain(pGain); }
+    float getThreshold() { return pThreshold; }
+    float getRatio() { return pRatio; }
+    float getAttack() { return pAttackTime; }
+    float getReleaseTime() { return pReleaseTime; }
+
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 
 public:
+    ScopedPointer <Compressor> processorComp;
     AudioProcessorValueTreeState treeState;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
-    std::unique_ptr<Compressor>processorComp = std::make_unique<Compressor>(PROCESSOR_ID);
 
-    float pAttackTime{ 5.0 };
-    float pReleaseTime{ 25.0 };
+    float pAttackTime;
+    float pReleaseTime;
 
-    float pThreshold{ -3.0 };
-    float pRatio{ 0.0 };
-    float pKneeWidth{ 5.0 };
+    float pThreshold;
+    float pRatio;
+    float pKneeWidth;
 
-    float pMakeUpGain{ 0.0 };
-    float pGain{ 0.0 };
+    float pMakeUpGain;
+    float pGain;
 
     int numChannels;
 };

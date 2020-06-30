@@ -21,6 +21,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slThresholdAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, THRESHOLD_ID, slThreshold);
     slRatioAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, RATIO_ID, slRatio);
     slKneeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, KNEE_ID, slKneeWidth);
+    slGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.treeState, GAIN_ID, slGain);
 
     //SLIDERS
 
@@ -50,14 +51,14 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slThreshold.setTextValueSuffix("dB");
     slThreshold.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slThreshold.setRange(-50.0, 0.0);
-    slThreshold.setValue(0.0);
+    slThreshold.setValue(-3.0);
 
     addAndMakeVisible(slRatio);
     slRatio.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slRatio.setTextValueSuffix(" :1");
     slRatio.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slRatio.setRange(0.0, 100.0);
-    slRatio.setValue(0.0);
+    slRatio.setValue(1.0);
 
     addAndMakeVisible(slKneeWidth);
     slKneeWidth.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
@@ -65,6 +66,13 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slKneeWidth.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slKneeWidth.setRange(0.0, 72.0);
     slKneeWidth.setValue(5.0);
+
+    addAndMakeVisible(slGain);
+    slGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
+    slGain.setTextValueSuffix("dB");
+    slGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
+    slGain.setRange(-100.0, 0.0);
+    slGain.setValue(0.0);
 
     //LABELS
 
@@ -74,6 +82,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     addAndMakeVisible(lThreshold);
     addAndMakeVisible(lRatio);
     addAndMakeVisible(lKneeWidth);
+    addAndMakeVisible(lGain);
 
     lMakeUpGain.setText("Output Gain", dontSendNotification);
     lAttack.setText("Attack", dontSendNotification);
@@ -81,6 +90,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     lThreshold.setText("Threshold", dontSendNotification);
     lRatio.setText("Ratio", dontSendNotification);
     lKneeWidth.setText("Knee", dontSendNotification);
+    lGain.setText("Gain", dontSendNotification);
 
     lMakeUpGain.attachToComponent(&slMakeUpGain, true);
     lAttack.attachToComponent(&slAttackTime, true);
@@ -88,8 +98,9 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     lThreshold.attachToComponent(&slThreshold, true);
     lRatio.attachToComponent(&slRatio, true);
     lKneeWidth.attachToComponent(&slKneeWidth, true);
+    lGain.attachToComponent(&slGain, true);
 
-    setSize(1200, 600);
+    setSize(1400, 600);
 }
 
 DevilPumperInfinityAudioProcessorEditor::~DevilPumperInfinityAudioProcessorEditor()
@@ -101,6 +112,7 @@ void DevilPumperInfinityAudioProcessorEditor::paint(Graphics& g)
 {
     Image background = ImageCache::getFromMemory(BinaryData::BACK_jpg, BinaryData::BACK_jpgSize);
     g.drawImageAt(background, 0, 0);
+    //g.fillAll(Colours::black);
 }
 
 void DevilPumperInfinityAudioProcessorEditor::resized()
@@ -114,7 +126,7 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
     flexBox.items.add(FlexItem(200, 100, slRelease));
     flexBox.items.add(FlexItem(200, 100, slRatio));
     flexBox.items.add(FlexItem(200, 100, slKneeWidth));
-
+    flexBox.items.add(FlexItem(200, 100, slGain));
 
     flexBox.performLayout(bounds);
 }
@@ -123,26 +135,30 @@ void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 {
     if (slider == &slMakeUpGain)
     {
-        processor.mMakeUpGain = slMakeUpGain.getValue();
+        processor.setMakeUpGain(slMakeUpGain.getValue());
     }
     else if (slider == &slAttackTime)
     {
-        processor.mAttackTime = slAttackTime.getValue();
+        processor.setAttack(slAttackTime.getValue());
     }
     else if (slider == &slRelease)
     {
-        processor.mReleaseTime = slRelease.getValue();
+        processor.setRelease(slRelease.getValue());
     }
     else if (slider == &slThreshold)
     {
-        processor.mThreshold = slThreshold.getValue();
+        processor.setThreshold(slThreshold.getValue());
     }
     else if (slider == &slRatio)
     {
-        processor.mRatio = slRatio.getValue();
+        processor.setRatio(slRatio.getValue());
     }
     else if (slider == &slKneeWidth)
     {
-        processor.mKneeWidth = slKneeWidth.getValue();
+        processor.setKneeWidth(slKneeWidth.getValue());
+    }
+    else if (slider == &slGain)
+    {
+        processor.setGain(slGain.getValue());
     }
 }

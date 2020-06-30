@@ -29,18 +29,18 @@ private:
     float mReleaseTime{ 25.0 };
 
     float mThreshold{ -3.0 };
-    float mRatio{ 0.0 };
+    float mRatio{ 1.0 };
     float mKneeWidth{ 5.0 };
 
-    float mInputGain{ 0.0 };
-    float mOutputGain{ 0.0 };
-    float mMakeUpGain{ 0.0 };
-    float mInputLevel{ 0.0 };
-    float mOutputLevel{ 0.0 };
-    float mPreviousOutputLevel{ 0.0 };
+    float mInputGain;
+    float mOutputGain;
+    float mMakeUpGain;
+    float mInputLevel;
+    float mOutputLevel;
+    float mPreviousOutputLevel;
 
-    float mControlVoltage{ 0.0 };
-    float mSampleRate{ 44100 };
+    float mControlVoltage;
+    float mSampleRate;
 };
 
 #endif//

@@ -26,6 +26,7 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     treeState(*this, nullptr, "Parameter", createParameter())
 #endif
 {
+    processorComp = new Compressor;
     treeState.state = ValueTree("savedParameters");
 }
 
@@ -140,6 +141,9 @@ void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int sam
     pGain = *treeState.getRawParameterValue(GAIN_ID);
 
     pMakeUpGain = *treeState.getRawParameterValue(MAKEUP_ID);
+
+    (*processorComp).prepareToPlay(sampleRate, samplesPerBlock, getTotalNumInputChannels());
+    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pMakeUpGain, pKneeWidth);
 }
 
 void DevilPumperInfinityAudioProcessor::releaseResources()
@@ -207,10 +211,10 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioBuffer<float>& buffer,
 
     for (int channel = 0; channel < totalNumInputChannels; channel++)
     {
-        buffer.addFrom(channel, 0, Output, channel, 0, numSamples);
+        buffer.addFrom(channel, 0, Output, channel, 0, numSamples, 1.0);
     }
 
-    buffer.applyGain(pGain);
+    buffer.applyGain(pMakeUpGain);
 }
 
 //==============================================================================

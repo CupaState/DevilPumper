@@ -29,7 +29,6 @@ public:
     void sliderValueChanged(Slider* slider) override;
 
 
-
 private:
     DevilPumperInfinityAudioProcessor& processor;
     Slider slMakeUpGain;
@@ -38,6 +37,7 @@ private:
     Slider slThreshold;
     Slider slRatio;
     Slider slKneeWidth;
+    Slider slGain;
 
     Label lRelease;
     Label lMakeUpGain;
@@ -45,6 +45,7 @@ private:
     Label lThreshold;
     Label lRatio;
     Label lKneeWidth;
+    Label lGain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
 public:
@@ -54,4 +55,5 @@ public:
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slThresholdAttach;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slRatioAttach;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slKneeAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> slGainAttach;
 };
