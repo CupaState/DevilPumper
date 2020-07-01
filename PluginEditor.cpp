@@ -17,58 +17,65 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
 {
     //SLIDERS
 
-    addAndMakeVisible(slMakeUpGain);
-    slMakeUpGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slMakeUpGain.setTextValueSuffix("dB");
-    slMakeUpGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slMakeUpGain.setRange(-50.0, 10.0);
-    slMakeUpGain.setSize(10, 400);
+    addAndMakeVisible(&slOverallGain);
+    slOverallGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
+    slOverallGain.setTextValueSuffix("dB");
+    slOverallGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
+    slOverallGain.setRange(-40.0, 10.0);
+    slOverallGain.setValue(0.0);
+    slOverallGain.addListener(this);
 
-    addAndMakeVisible(slAttackTime);
+    addAndMakeVisible(&slAttackTime);
     slAttackTime.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slAttackTime.setTextValueSuffix("ms");
     slAttackTime.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slAttackTime.setRange(1.0, 250.0);
     slAttackTime.setValue(5.0);
+    slAttackTime.addListener(this);
 
-    addAndMakeVisible(slRelease);
+    addAndMakeVisible(&slRelease);
     slRelease.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slRelease.setTextValueSuffix("ms");
     slRelease.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slRelease.setRange(1.0, 2500.0);
     slRelease.setValue(25.0);
+    slRelease.addListener(this);
 
-    addAndMakeVisible(slThreshold);
+    addAndMakeVisible(&slThreshold);
     slThreshold.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slThreshold.setTextValueSuffix("dB");
     slThreshold.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slThreshold.setRange(-50.0, 0.0);
     slThreshold.setValue(-3.0);
+    slThreshold.addListener(this);
 
-    addAndMakeVisible(slRatio);
+    addAndMakeVisible(&slRatio);
     slRatio.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slRatio.setTextValueSuffix(" :1");
     slRatio.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slRatio.setRange(0.0, 100.0);
+    slRatio.setRange(1.0, 100.0);
     slRatio.setValue(1.0);
+    slRatio.addListener(this);
 
-    addAndMakeVisible(slKneeWidth);
+    addAndMakeVisible(&slKneeWidth);
     slKneeWidth.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slKneeWidth.setTextValueSuffix("dB");
     slKneeWidth.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slKneeWidth.setRange(0.0, 72.0);
+    slKneeWidth.setRange(0.0, 10.0);
     slKneeWidth.setValue(5.0);
+    slKneeWidth.addListener(this);
 
-    addAndMakeVisible(slGain);
+    addAndMakeVisible(&slGain);
     slGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slGain.setTextValueSuffix("dB");
     slGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slGain.setRange(-100.0, 0.0);
+    slGain.setRange(-80.0, 40.0);
     slGain.setValue(0.0);
+    slGain.addListener(this);
 
     //LABELS
 
-    addAndMakeVisible(lMakeUpGain);
+    addAndMakeVisible(lOverallGain);
     addAndMakeVisible(lAttack);
     addAndMakeVisible(lRelease);
     addAndMakeVisible(lThreshold);
@@ -76,7 +83,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     addAndMakeVisible(lKneeWidth);
     addAndMakeVisible(lGain);
 
-    lMakeUpGain.setText("Output Gain", dontSendNotification);
+    lOverallGain.setText("Output Gain", dontSendNotification);
     lAttack.setText("Attack", dontSendNotification);
     lRelease.setText("Release", dontSendNotification);
     lThreshold.setText("Threshold", dontSendNotification);
@@ -84,13 +91,30 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     lKneeWidth.setText("Knee", dontSendNotification);
     lGain.setText("Gain", dontSendNotification);
 
-    lMakeUpGain.attachToComponent(&slMakeUpGain, true);
+    lOverallGain.setFont(Font(15.0f, Font::plain));
+    lAttack.setFont(Font(15.0f, Font::plain));
+    lRelease.setFont(Font(15.0f, Font::plain));
+    lThreshold.setFont(Font(15.0f, Font::plain));
+    lRatio.setFont(Font(15.0f, Font::plain));
+    lKneeWidth.setFont(Font(15.0f, Font::plain));
+    lGain.setFont(Font(15.0f, Font::plain));
+
+    lOverallGain.attachToComponent(&slOverallGain, true);
     lAttack.attachToComponent(&slAttackTime, true);
     lRelease.attachToComponent(&slRelease, true);
     lThreshold.attachToComponent(&slThreshold, true);
     lRatio.attachToComponent(&slRatio, true);
     lKneeWidth.attachToComponent(&slKneeWidth, true);
     lGain.attachToComponent(&slGain, true);
+
+    //BUTTON
+
+    addAndMakeVisible(btnCompressorState = new TextButton("ON_OFF"));
+    btnCompressorState->setButtonText("ON_OFF");
+    btnCompressorState->setColour(TextButton::buttonColourId, Colours::firebrick);
+    btnCompressorState->setColour(TextButton::textColourOnId, Colours::palevioletred);
+    btnCompressorState->setColour(TextButton::textColourOffId, Colours::black);
+    btnCompressorState->addListener(this);
 
     setSize(1400, 600);
 }
@@ -104,6 +128,8 @@ void DevilPumperInfinityAudioProcessorEditor::paint(Graphics& g)
 {
     Image background = ImageCache::getFromMemory(BinaryData::BACK_jpg, BinaryData::BACK_jpgSize);
     g.drawImageAt(background, 0, 0);
+    g.setFont(15.0f);
+    g.drawFittedText("DevilPumper", getWidth() / 2 - 75, 0, 150, getWidth() / 2 - 75, Justification::centred, 1);
     //g.fillAll(Colours::black);
 }
 
@@ -112,7 +138,7 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
     Rectangle<int>bounds = getLocalBounds();
     FlexBox flexBox;
 
-    flexBox.items.add(FlexItem(200, 100, slMakeUpGain));
+    flexBox.items.add(FlexItem(200, 100, slOverallGain));
     flexBox.items.add(FlexItem(200, 100, slAttackTime));
     flexBox.items.add(FlexItem(200, 100, slThreshold));
     flexBox.items.add(FlexItem(200, 100, slRelease));
@@ -125,9 +151,9 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
 
 void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 {
-    if (slider == &slMakeUpGain)
+    if (slider == &slOverallGain)
     {
-        processor.setMakeUpGain(slMakeUpGain.getValue());
+        processor.setOverallGain(slOverallGain.getValue());
     }
     else if (slider == &slAttackTime)
     {
@@ -153,4 +179,10 @@ void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
     {
         processor.setGain(slGain.getValue());
     }
+}
+
+
+void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* button)
+{
+    processor.setCompressorState(btnCompressorState->getToggleState());
 }

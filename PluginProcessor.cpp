@@ -25,6 +25,17 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     )
 #endif
 {
+    pGain = 1.0;
+    pThreshold = 0.0;
+    pRatio = 1.0;
+    pAttackTime = 5.0;
+    pReleaseTime = 5.0;
+
+    ON_OFF = 1;
+
+    pOverallGain = 10.0;
+    pKneeWidth = 0.0;
+
     processorComp = new Compressor;
 }
 
@@ -100,7 +111,7 @@ void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int sam
     numChannels = getTotalNumInputChannels();
 
     (*processorComp).prepareToPlay(sampleRate, samplesPerBlock, getTotalNumInputChannels());
-    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pMakeUpGain, pKneeWidth);
+    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth);
 }
 
 void DevilPumperInfinityAudioProcessor::releaseResources()
@@ -133,14 +144,14 @@ bool DevilPumperInfinityAudioProcessor::isBusesLayoutSupported(const BusesLayout
 }
 #endif
 
-void DevilPumperInfinityAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
+void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
 
-    auto totalNumInputChannels = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    const int totalNumInputChannels = getTotalNumInputChannels();
+    const int totalNumOutputChannels = getTotalNumOutputChannels();
 
-    int numSamples = buffer.getNumSamples();
+    const int numSamples = buffer.getNumSamples();
 
     // Initialise Buffer
 
@@ -156,7 +167,7 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioBuffer<float>& buffer,
         buffer.clear(i, 0, buffer.getNumSamples());
 
     // Set the Compressor Parameters
-    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pMakeUpGain, pKneeWidth);
+    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth);
 
     //compression
 
@@ -171,7 +182,7 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioBuffer<float>& buffer,
         buffer.addFrom(channel, 0, Output, channel, 0, numSamples, 1.0);
     }
 
-    buffer.applyGain(pMakeUpGain);
+    buffer.applyGain(pOverallGain);
 }
 
 //==============================================================================

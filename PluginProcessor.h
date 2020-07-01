@@ -32,7 +32,7 @@ public:
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 #endif
 
-    void processBlock(AudioBuffer<float>&, MidiBuffer&) override;
+    void processBlock(AudioSampleBuffer&, MidiBuffer&) override;
 
     //==============================================================================
     AudioProcessorEditor* createEditor() override;
@@ -59,7 +59,7 @@ public:
 
     // Setter Functions for each parameter
 
-    void setMakeUpGain(float makeUpGain) { pMakeUpGain = Decibels::decibelsToGain(makeUpGain); }
+    void setOverallGain(float OverallGain) { pOverallGain = Decibels::decibelsToGain(OverallGain); }
     void setKneeWidth(float KneeWidth) { pKneeWidth = KneeWidth; }
     void setGain(float Gain) { pGain = Decibels::decibelsToGain(Gain); }
     void setThreshold(float Threshold) { pThreshold = Threshold; }
@@ -67,11 +67,12 @@ public:
     void setAttack(float Attack) { pAttackTime = Attack; }
     void setRelease(float Release) { pReleaseTime = Release; }
 
+    void setCompressorState(int ON_OFF) { this->ON_OFF = ON_OFF; }
 
     //==============================================================================
     // Getter Functions for each parameter
 
-    float getMakeUpGain() { return Decibels::decibelsToGain(pMakeUpGain); }
+    float getOverallGain() { return Decibels::decibelsToGain(pOverallGain); }
     float getKneeWidth() { return pKneeWidth; }
     float getGain() { return Decibels::decibelsToGain(pGain); }
     float getThreshold() { return pThreshold; }
@@ -79,11 +80,10 @@ public:
     float getAttack() { return pAttackTime; }
     float getReleaseTime() { return pReleaseTime; }
 
-private:
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
+    float getCompressorState() { return ON_OFF; }
 
-public:
+private:
+
     ScopedPointer <Compressor> processorComp;
 
     float pAttackTime;
@@ -93,8 +93,13 @@ public:
     float pRatio;
     float pKneeWidth;
 
-    float pMakeUpGain;
+    float pOverallGain;
     float pGain;
 
     int numChannels;
+
+    //Compressor States
+    int ON_OFF;
+    //==============================================================================
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };

@@ -17,7 +17,7 @@
 //==============================================================================
 /**
 */
-class DevilPumperInfinityAudioProcessorEditor : public AudioProcessorEditor, public Slider::Listener
+class DevilPumperInfinityAudioProcessorEditor : public AudioProcessorEditor, public Slider::Listener, public Button::Listener
 {
 public:
     DevilPumperInfinityAudioProcessorEditor(DevilPumperInfinityAudioProcessor&);
@@ -27,11 +27,13 @@ public:
     void paint(Graphics&) override;
     void resized() override;
     void sliderValueChanged(Slider* slider) override;
+    void buttonClicked(Button* button) override;
 
 
 private:
     DevilPumperInfinityAudioProcessor& processor;
-    Slider slMakeUpGain;
+
+    Slider slOverallGain;
     Slider slAttackTime;
     Slider slRelease;
     Slider slThreshold;
@@ -40,12 +42,14 @@ private:
     Slider slGain;
 
     Label lRelease;
-    Label lMakeUpGain;
+    Label lOverallGain;
     Label lAttack;
     Label lThreshold;
     Label lRatio;
     Label lKneeWidth;
     Label lGain;
+
+    Button* btnCompressorState;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
 };

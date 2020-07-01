@@ -10,10 +10,14 @@
 
 #pragma once
 
-#include <JuceHeader.h>
+
 
 #ifndef Compressor_h
 #define Compressor_h
+
+#include <JuceHeader.h>
+
+
 class Compressor
 {
 public:
@@ -25,22 +29,25 @@ public:
     void setParameters(float ratio, float threshold, float attack, float release, float makeUpGain, float kneeWidth);
 
 private:
-    float mAttackTime{ 5.0 };
-    float mReleaseTime{ 25.0 };
+    float mAttackTime;
+    float mReleaseTime;
+    float mThreshold;
+    float mRatio;
+    float mKneeWidth;
+    float mSampleRate;
+    float mMakeUpGain;
 
-    float mThreshold{ -3.0 };
-    float mRatio{ 1.0 };
-    float mKneeWidth{ 5.0 };
+    // Compressor ON-OFF state
+    int compressorState = 1;
 
     float mInputGain;
     float mOutputGain;
-    float mMakeUpGain;
     float mInputLevel;
     float mOutputLevel;
-    float mPreviousOutputLevel;
 
+    float mPreviousOutputLevel;
     float mControlVoltage;
-    float mSampleRate;
+
 };
 
-#endif//
+#endif//Compressor_h 
