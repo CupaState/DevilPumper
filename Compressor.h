@@ -16,7 +16,7 @@
 #define Compressor_h
 
 #include <JuceHeader.h>
-
+#include "pluginconstants.h"
 
 class Compressor
 {
@@ -24,11 +24,22 @@ public:
     Compressor();
     ~Compressor();
 
-    void prepareToPlay(double samplerate, int samplesPerBlock, int numInputChannels);
+    void prepareToPlay(double samplerate);
     void processBlock(AudioSampleBuffer& buffer);
-    void setParameters(float ratio, float threshold, float attack, float release, float makeUpGain, float kneeWidth);
+    void setParameters(float ratio, float threshold, float attack, float release, float makeUpGain, float kneeWidth, float outputGain);
+
+    enum TimeConstant
+    {
+        Digital,
+        Analog,
+    };
+
+    TimeConstant m_uTimeConstant;
+
+    //void processAudioFrame(float* inputBuffer, float* outputBuffer, int uNumInputChannels, int uNumOutputChannels);
 
 private:
+
     float mAttackTime;
     float mReleaseTime;
     float mThreshold;
@@ -37,9 +48,6 @@ private:
     float mSampleRate;
     float mMakeUpGain;
 
-    // Compressor ON-OFF state
-    int compressorState = 1;
-
     float mInputGain;
     float mOutputGain;
     float mInputLevel;
@@ -47,7 +55,6 @@ private:
 
     float mPreviousOutputLevel;
     float mControlVoltage;
-
 };
 
 #endif//Compressor_h 

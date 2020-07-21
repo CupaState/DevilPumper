@@ -31,16 +31,15 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     pAttackTime = 5.0;
     pReleaseTime = 5.0;
 
-    ON_OFF = 1;
-
-    pOverallGain = 10.0;
-    pKneeWidth = 0.0;
+    pOverallGain =0.0;
+    pKneeWidth = 5.0;
 
     processorComp = new Compressor;
 }
 
 DevilPumperInfinityAudioProcessor::~DevilPumperInfinityAudioProcessor()
 {
+
 }
 
 //==============================================================================
@@ -110,8 +109,8 @@ void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int sam
 {
     numChannels = getTotalNumInputChannels();
 
-    (*processorComp).prepareToPlay(sampleRate, samplesPerBlock, getTotalNumInputChannels());
-    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth);
+    (*processorComp).prepareToPlay(sampleRate);
+    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth, pOverallGain);
 }
 
 void DevilPumperInfinityAudioProcessor::releaseResources()
@@ -164,23 +163,23 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, 
     float SampleRate = getSampleRate();
 
     for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
+        buffer.clear(i, 0, numSamples);
 
     // Set the Compressor Parameters
-    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth);
+    (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth, pOverallGain);
 
     //compression
 
-    (*processorComp).processBlock(Output);
-
-    // Sum Each Band
-
-    buffer.clear();
-
     for (int channel = 0; channel < totalNumInputChannels; channel++)
     {
+        for (int sample = 0; sample < numSamples; sample++)
+        {
+            (*processorComp).processBlock(Output);
+        }
         buffer.addFrom(channel, 0, Output, channel, 0, numSamples, 1.0);
     }
+
+    buffer.clear();
 
     buffer.applyGain(pOverallGain);
 }

@@ -46,7 +46,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slThreshold.setTextValueSuffix("dB");
     slThreshold.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slThreshold.setRange(-50.0, 0.0);
-    slThreshold.setValue(-3.0);
+    slThreshold.setValue(-0.0);
     slThreshold.addListener(this);
 
     addAndMakeVisible(&slRatio);
@@ -107,35 +107,37 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     lKneeWidth.attachToComponent(&slKneeWidth, true);
     lGain.attachToComponent(&slGain, true);
 
-    //BUTTON
+   //Buttons
 
-    addAndMakeVisible(btnCompressorState = new TextButton("ON_OFF"));
-    btnCompressorState->setButtonText("ON_OFF");
-    btnCompressorState->setColour(TextButton::buttonColourId, Colours::firebrick);
-    btnCompressorState->setColour(TextButton::textColourOnId, Colours::palevioletred);
-    btnCompressorState->setColour(TextButton::textColourOffId, Colours::black);
-    btnCompressorState->addListener(this);
+    addAndMakeVisible(toggleAnalog = new TextButton("Analog_Digital"));
+    toggleAnalog->setButtonText("ANALOG");
+    toggleAnalog->setColour(TextButton::buttonColourId, Colours::darkred);
+    toggleAnalog->setColour(TextButton::textColourOnId, Colours::aqua);
+    toggleAnalog->setColour(TextButton::textColourOffId, Colours::brown);
+    toggleAnalog->setColour(TextButton::buttonOnColourId, Colours::dodgerblue);
+    toggleAnalog->addMouseListener(this, false);
 
-    setSize(1400, 600);
+    setSize(1500, 600);
 }
 
 DevilPumperInfinityAudioProcessorEditor::~DevilPumperInfinityAudioProcessorEditor()
 {
+
 }
 
 //==============================================================================
 void DevilPumperInfinityAudioProcessorEditor::paint(Graphics& g)
 {
-    Image background = ImageCache::getFromMemory(BinaryData::BACK_jpg, BinaryData::BACK_jpgSize);
+    /*Image background = ImageCache::getFromMemory(BinaryData::BACK_jpg, BinaryData::BACK_jpgSize);
     g.drawImageAt(background, 0, 0);
     g.setFont(15.0f);
-    g.drawFittedText("DevilPumper", getWidth() / 2 - 75, 0, 150, getWidth() / 2 - 75, Justification::centred, 1);
-    //g.fillAll(Colours::black);
+    g.drawFittedText("DevilPumper", getWidth() / 2 - 75, 0, 150, getWidth() / 2 - 75, Justification::centred, 1);*/
+    g.fillAll(Colours::black);
 }
 
 void DevilPumperInfinityAudioProcessorEditor::resized()
 {
-    Rectangle<int>bounds = getLocalBounds();
+    juce::Rectangle<int>bounds = getLocalBounds();
     FlexBox flexBox;
 
     flexBox.items.add(FlexItem(200, 100, slOverallGain));
@@ -145,6 +147,8 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
     flexBox.items.add(FlexItem(200, 100, slRatio));
     flexBox.items.add(FlexItem(200, 100, slKneeWidth));
     flexBox.items.add(FlexItem(200, 100, slGain));
+
+    flexBox.items.add(FlexItem(50, 20, *toggleAnalog));
 
     flexBox.performLayout(bounds);
 }
@@ -184,5 +188,5 @@ void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 
 void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* button)
 {
-    processor.setCompressorState(btnCompressorState->getToggleState());
+    processor.setCompressorState(static_cast<int>(toggleAnalog->getToggleState()));
 }

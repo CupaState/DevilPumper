@@ -49,7 +49,7 @@ private:
     Label lKneeWidth;
     Label lGain;
 
-    Button* btnCompressorState;
+    Button* toggleAnalog;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
 };
