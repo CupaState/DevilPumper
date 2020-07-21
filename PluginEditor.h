@@ -29,7 +29,6 @@ public:
     void sliderValueChanged(Slider* slider) override;
     void buttonClicked(Button* button) override;
 
-
 private:
     DevilPumperInfinityAudioProcessor& processor;
 
@@ -49,7 +48,8 @@ private:
     Label lKneeWidth;
     Label lGain;
 
-    Button* btnAnalogDigital;
+    Button* btnAnalog;
+    Button* btnDigital;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
 };

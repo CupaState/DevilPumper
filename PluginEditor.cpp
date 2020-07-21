@@ -109,18 +109,28 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
 
     //BUTTON
 
-    addAndMakeVisible(btnAnalogDigital = new TextButton("Analog"));
-    btnAnalogDigital->setButtonText("Analog");
-    btnAnalogDigital->setColour(TextButton::buttonOnColourId, Colours::firebrick);
-    btnAnalogDigital->setColour(TextButton::textColourOnId, Colours::palevioletred);
-    btnAnalogDigital->setColour(TextButton::textColourOffId, Colours::black);
-    btnAnalogDigital->addListener(this);
+    addAndMakeVisible(btnAnalog = new TextButton("Analog"));
+    btnAnalog->setButtonText("Analog");
+    btnAnalog->setColour(TextButton::buttonOnColourId, Colours::firebrick);
+    btnAnalog->setColour(TextButton::buttonColourId, Colours::tan);
+    btnAnalog->setColour(TextButton::textColourOnId, Colours::palevioletred);
+    btnAnalog->setColour(TextButton::textColourOffId, Colours::black);
+    btnAnalog->addListener(this);
 
-    setSize(1600, 600);
+    addAndMakeVisible(btnDigital = new TextButton("Digital"));
+    btnDigital->setButtonText("Digital");
+    btnDigital->setColour(TextButton::buttonOnColourId, Colours::firebrick);
+    btnDigital->setColour(TextButton::buttonColourId, Colours::tan);
+    btnDigital->setColour(TextButton::textColourOffId, Colours::black);
+    btnDigital->setColour(TextButton::textColourOnId, Colours::palevioletred);
+    btnDigital->addListener(this);
+
+    setSize(1400, 600);
 }
 
 DevilPumperInfinityAudioProcessorEditor::~DevilPumperInfinityAudioProcessorEditor()
 {
+
 }
 
 //==============================================================================
@@ -145,9 +155,11 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
     flexBox.items.add(FlexItem(200, 100, slRatio));
     flexBox.items.add(FlexItem(200, 100, slKneeWidth));
     flexBox.items.add(FlexItem(200, 100, slGain));
-    flexBox.items.add(FlexItem(50, 20, *btnAnalogDigital));
 
     flexBox.performLayout(bounds);
+
+    btnAnalog->setBounds(20, 30, 50, 20);
+    btnDigital->setBounds(20, 60, 50, 20);
 }
 
 void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
@@ -185,19 +197,16 @@ void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 
 void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* button)
 {
-    int counter = 0;
-    if (button == btnAnalogDigital)
+    if (button == btnAnalog)
     {
-        btnAnalogDigital->setToggleState(true, false);
-        counter++;
-        if (counter % 2 == 0)
-        {
-            btnAnalogDigital->setToggleState(false, false);
-        }
-        else
-        {
-            btnAnalogDigital->setToggleState(true, false);
-        }
+        btnAnalog->setToggleState(true, false);
+        btnDigital->setToggleState(false, false);
+        processor.setAnalogDigital(btnAnalog->getToggleState());
     }
-    processor.setAnalogDigital(btnAnalogDigital->getToggleState());
+    else if (button == btnDigital)
+    {
+        btnAnalog->setToggleState(false, false);
+        btnDigital->setToggleState(true, false);
+        processor.setAnalogDigital(btnAnalog->getToggleState());
+    }
 }
