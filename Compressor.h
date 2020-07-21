@@ -17,6 +17,8 @@
 
 #include <JuceHeader.h>
 
+const float DIGITAL_TC = -2.0; // log(1%)
+const float ANALOG_TC = -0.43533393574791066201247090699309; // (log(36.7%)
 
 class Compressor
 {
@@ -28,6 +30,13 @@ public:
     void processBlock(AudioSampleBuffer& buffer);
     void setParameters(float ratio, float threshold, float attack, float release, float makeUpGain, float kneeWidth);
 
+    enum class TimeConstant
+    {
+        Analog,
+        Digital,
+    };
+
+    TimeConstant mTimeConst;
 private:
     float mAttackTime;
     float mReleaseTime;
@@ -36,9 +45,6 @@ private:
     float mKneeWidth;
     float mSampleRate;
     float mMakeUpGain;
-
-    // Compressor ON-OFF state
-    int compressorState = 1;
 
     float mInputGain;
     float mOutputGain;

@@ -66,8 +66,17 @@ public:
     void setRatio(float Ratio) { pRatio = Ratio; }
     void setAttack(float Attack) { pAttackTime = Attack; }
     void setRelease(float Release) { pReleaseTime = Release; }
-
-    void setCompressorState(int ON_OFF) { this->ON_OFF = ON_OFF; }
+    void setAnalogDigital(bool analog)
+    {
+        if (analog == true)
+        {
+            (*processorComp).mTimeConst = Compressor::TimeConstant::Analog;
+        }
+        else
+        {
+            (*processorComp).mTimeConst = Compressor::TimeConstant::Digital;
+        }
+    }
 
     //==============================================================================
     // Getter Functions for each parameter
@@ -79,8 +88,6 @@ public:
     float getRatio() { return pRatio; }
     float getAttack() { return pAttackTime; }
     float getReleaseTime() { return pReleaseTime; }
-
-    float getCompressorState() { return ON_OFF; }
 
 private:
 
@@ -98,8 +105,6 @@ private:
 
     int numChannels;
 
-    //Compressor States
-    int ON_OFF;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };

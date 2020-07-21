@@ -34,73 +34,81 @@ void Compressor::processBlock(AudioSampleBuffer& buffer)
 
     for (int m = 0; m < M; ++m) //For each channel pair of channels
     {
-        if (compressorState) // check if compressor is active
+        if (mThreshold < 0)
         {
-            if (mThreshold < 0)
+            // Mix down left-right to analyse the input
+            inputBuffer.addFrom(m, 0, buffer, m * 2, 0, bufferSize, 0.5);
+            inputBuffer.addFrom(m, 0, buffer, m * 2 + 1, 0, bufferSize, 0.5);
+
+            float alphaAttack = 0;
+            float alphaRelease = 0;
+
+            // compression : calculates the control voltage
+            
+            if (mTimeConst == TimeConstant::Analog)
             {
-                // Mix down left-right to analyse the input
-                inputBuffer.addFrom(m, 0, buffer, m * 2, 0, bufferSize, 0.5);
-                inputBuffer.addFrom(m, 0, buffer, m * 2 + 1, 0, bufferSize, 0.5);
+                alphaAttack = exp(ANALOG_TC / (0.001 * mSampleRate * mAttackTime));
+                alphaRelease = exp(ANALOG_TC / (0.001 * mSampleRate * mReleaseTime));
+            }
+            else
+            {
+                alphaAttack = exp(DIGITAL_TC / (0.001 * mSampleRate * mAttackTime));
+                alphaRelease = exp(DIGITAL_TC / (0.001 * mSampleRate * mReleaseTime));
+            }
 
-
-                // compression : calculates the control voltage
-                float alphaAttack = exp(-1 / (0.001 * mSampleRate * mAttackTime));
-                float alphaRelease = exp(-1 / (0.001 * mSampleRate * mReleaseTime));
-
-                for (int i = 0; i < bufferSize; ++i)
+            for (int i = 0; i < bufferSize; ++i)
+            {
+                //Level detection- estimate level using peak detector
+                if (fabs(buffer.getWritePointer(m)[i]) < 0.000001)
                 {
-                    //Level detection- estimate level using peak detector
-                    if (fabs(buffer.getWritePointer(m)[i]) < 0.000001)
-                    {
-                        mInputGain = -120.0;
-                    }
-                    else
-                    {
-                        mInputGain = 20 * log10(fabs(buffer.getWritePointer(m)[i]));
-                    }
-
-                    // Gain computer - apply input/output curve with kneewidth
-                       // Incorporating the SOFT KNEE
-                    if (2 * (mInputGain - mThreshold) >= mKneeWidth)
-                    {
-                        // above knee
-                        mOutputGain = mThreshold + (mInputGain - mThreshold) / mRatio;
-                    }
-                    else if (2 * fabs(mInputGain - mThreshold) <= mKneeWidth)
-                    {
-                        // in knee
-                        mOutputGain = mInputGain + (1 / mRatio - 1) * pow(mInputGain - mThreshold + mKneeWidth / 2, 2) / (2 * mKneeWidth);
-                    }
-                    else // below knee
-                    {
-                        mOutputGain = mInputGain;
-                    }
-
-                    mInputLevel = mInputGain - mOutputGain;
-
-                    //Ballistics- smoothing of the gain
-                    if (mInputLevel > mPreviousOutputLevel)
-                    {
-                        mOutputLevel = alphaAttack * mPreviousOutputLevel + (1 - alphaAttack) * mInputLevel;
-                    }
-                    else
-                    {
-                        mOutputLevel = alphaRelease * mPreviousOutputLevel + (1 - alphaRelease) * mInputLevel;
-                    }
-
-                    //find control voltage
-                    mControlVoltage = pow(10, (mMakeUpGain - mOutputLevel) / 20);
-                    mPreviousOutputLevel = mOutputLevel;
-
-                    // apply control voltage to both channels
-                    buffer.getWritePointer(2 * m + 0)[i] *= mControlVoltage;
-                    buffer.getWritePointer(2 * m + 1)[i] *= mControlVoltage;
+                    mInputGain = -120.0;
                 }
+                else
+                {
+                    mInputGain = 20 * log10(fabs(buffer.getWritePointer(m)[i]));
+                }
+
+                // Gain computer - apply input/output curve with kneewidth
+                   // Incorporating the SOFT KNEE
+                if (2 * (mInputGain - mThreshold) >= mKneeWidth)
+                {
+                    // above knee
+                    mOutputGain = mThreshold + (mInputGain - mThreshold) / mRatio;
+                }
+                else if (2 * fabs(mInputGain - mThreshold) <= mKneeWidth)
+                {
+                    // in knee
+                    mOutputGain = mInputGain + (1 / mRatio - 1) * pow(mInputGain - mThreshold + mKneeWidth / 2, 2) / (2 * mKneeWidth);
+                }
+                else // below knee
+                {
+                    mOutputGain = mInputGain;
+                }
+
+                mInputLevel = mInputGain - mOutputGain;
+
+                //Ballistics- smoothing of the gain
+                if (mInputLevel > mPreviousOutputLevel)
+                {
+                    mOutputLevel = alphaAttack * mPreviousOutputLevel + (1 - alphaAttack) * mInputLevel;
+                }
+                else
+                {
+                    mOutputLevel = alphaRelease * mPreviousOutputLevel + (1 - alphaRelease) * mInputLevel;
+                }
+
+                //find control voltage
+                mControlVoltage = pow(10, (mMakeUpGain - mOutputLevel) / 20);
+                mPreviousOutputLevel = mOutputLevel;
+
+                // apply control voltage to both channels
+                buffer.getWritePointer(2 * m + 0)[i] *= mControlVoltage;
+                buffer.getWritePointer(2 * m + 1)[i] *= mControlVoltage;
             }
-            else // if threshold = 0, still apply make up gain.
-            {
-                buffer.applyGain(pow(10, (mMakeUpGain) / 20));
-            }
+        }
+        else // if threshold = 0, still apply make up gain.
+        {
+            buffer.applyGain(pow(10, (mMakeUpGain) / 20));
         }
     }
 }

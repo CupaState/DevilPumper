@@ -30,7 +30,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slAttackTime.setTextValueSuffix("ms");
     slAttackTime.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slAttackTime.setRange(1.0, 250.0);
-    slAttackTime.setValue(5.0);
+    slAttackTime.setValue(25.0);
     slAttackTime.addListener(this);
 
     addAndMakeVisible(&slRelease);
@@ -109,14 +109,14 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
 
     //BUTTON
 
-    addAndMakeVisible(btnCompressorState = new TextButton("ON_OFF"));
-    btnCompressorState->setButtonText("ON_OFF");
-    btnCompressorState->setColour(TextButton::buttonColourId, Colours::firebrick);
-    btnCompressorState->setColour(TextButton::textColourOnId, Colours::palevioletred);
-    btnCompressorState->setColour(TextButton::textColourOffId, Colours::black);
-    btnCompressorState->addListener(this);
+    addAndMakeVisible(btnAnalogDigital = new TextButton("Analog"));
+    btnAnalogDigital->setButtonText("Analog");
+    btnAnalogDigital->setColour(TextButton::buttonOnColourId, Colours::firebrick);
+    btnAnalogDigital->setColour(TextButton::textColourOnId, Colours::palevioletred);
+    btnAnalogDigital->setColour(TextButton::textColourOffId, Colours::black);
+    btnAnalogDigital->addListener(this);
 
-    setSize(1400, 600);
+    setSize(1600, 600);
 }
 
 DevilPumperInfinityAudioProcessorEditor::~DevilPumperInfinityAudioProcessorEditor()
@@ -145,6 +145,7 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
     flexBox.items.add(FlexItem(200, 100, slRatio));
     flexBox.items.add(FlexItem(200, 100, slKneeWidth));
     flexBox.items.add(FlexItem(200, 100, slGain));
+    flexBox.items.add(FlexItem(50, 20, *btnAnalogDigital));
 
     flexBox.performLayout(bounds);
 }
@@ -184,5 +185,19 @@ void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 
 void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* button)
 {
-    processor.setCompressorState(btnCompressorState->getToggleState());
+    int counter = 0;
+    if (button == btnAnalogDigital)
+    {
+        btnAnalogDigital->setToggleState(true, false);
+        counter++;
+        if (counter % 2 == 0)
+        {
+            btnAnalogDigital->setToggleState(false, false);
+        }
+        else
+        {
+            btnAnalogDigital->setToggleState(true, false);
+        }
+    }
+    processor.setAnalogDigital(btnAnalogDigital->getToggleState());
 }
