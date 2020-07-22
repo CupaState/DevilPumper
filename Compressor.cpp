@@ -36,6 +36,8 @@ void Compressor::processBlock(AudioSampleBuffer& buffer)
     {
         if (compressorState) // check if compressor is active
         {
+            float alphaAttack = 0;
+            float alphaRelease = 0;
             if (mThreshold < 0)
             {
                 // Mix down left-right to analyse the input
@@ -44,8 +46,17 @@ void Compressor::processBlock(AudioSampleBuffer& buffer)
 
 
                 // compression : calculates the control voltage
-                float alphaAttack = exp(-1 / (0.001 * mSampleRate * mAttackTime));
-                float alphaRelease = exp(-1 / (0.001 * mSampleRate * mReleaseTime));
+                if (mTimeConstant == TimeConstant::Analog)
+                {
+                    alphaAttack = exp(ANALOG_TC / (0.001 * mSampleRate * mAttackTime));
+                    alphaRelease = exp(ANALOG_TC/ (0.001 * mSampleRate * mReleaseTime));
+                }
+                else
+                {
+                    alphaAttack = exp(DIGITAL_TC / (0.001 * mSampleRate * mAttackTime));
+                    alphaRelease = exp(DIGITAL_TC / (0.001 * mSampleRate * mReleaseTime));
+                }
+
 
                 for (int i = 0; i < bufferSize; ++i)
                 {
@@ -107,17 +118,15 @@ void Compressor::processBlock(AudioSampleBuffer& buffer)
 
 void Compressor::setParameters(float ratio, float threshold, float attack, float release, float makeUpGain, float kneeWidth)
 {
-    mRatio = ratio;
-    mThreshold = threshold;
-    mAttackTime = attack;
-    mReleaseTime = release;
-    mMakeUpGain = Decibels::gainToDecibels(makeUpGain);
-    mKneeWidth = kneeWidth;
+    this->mRatio = ratio;
+    this->mThreshold = threshold;
+    this->mAttackTime = attack;
+    this->mReleaseTime = release;
+    this->mMakeUpGain = Decibels::gainToDecibels(makeUpGain);
+    this->mKneeWidth = kneeWidth;
 }
 
 void Compressor::prepareToPlay(double samplerate, int samplesPerBlock, int numInputChannels)
 {
     mSampleRate = samplerate;
-    mPreviousOutputLevel = 0;
 }
-

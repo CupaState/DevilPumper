@@ -109,12 +109,21 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
 
     //BUTTON
 
-    addAndMakeVisible(btnCompressorState = new TextButton("ON_OFF"));
-    btnCompressorState->setButtonText("ON_OFF");
-    btnCompressorState->setColour(TextButton::buttonColourId, Colours::firebrick);
-    btnCompressorState->setColour(TextButton::textColourOnId, Colours::palevioletred);
-    btnCompressorState->setColour(TextButton::textColourOffId, Colours::black);
-    btnCompressorState->addListener(this);
+    addAndMakeVisible(btnAnalog = new TextButton("Analog"));
+    btnAnalog->setButtonText("Analog");
+    btnAnalog->setColour(TextButton::buttonColourId, Colours::firebrick);
+    btnAnalog->setColour(TextButton::buttonOnColourId, Colours::cadetblue);
+    btnAnalog->setColour(TextButton::textColourOnId, Colours::palevioletred);
+    btnAnalog->setColour(TextButton::textColourOffId, Colours::black);
+    btnAnalog->addListener(this);
+
+    addAndMakeVisible(btnDigital = new TextButton("Digital"));
+    btnDigital->setButtonText("Digital");
+    btnDigital->setColour(TextButton::buttonColourId, Colours::firebrick);
+    btnDigital->setColour(TextButton::buttonOnColourId, Colours::cadetblue);
+    btnDigital->setColour(TextButton::textColourOnId, Colours::palevioletred);
+    btnDigital->setColour(TextButton::textColourOffId, Colours::black);
+    btnDigital->addListener(this);
 
     setSize(1400, 600);
 }
@@ -147,6 +156,9 @@ void DevilPumperInfinityAudioProcessorEditor::resized()
     flexBox.items.add(FlexItem(200, 100, slGain));
 
     flexBox.performLayout(bounds);
+
+    btnAnalog->setBounds(20, 30, 40, 20);
+    btnDigital->setBounds(20, 60, 40, 20);
 }
 
 void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
@@ -184,5 +196,17 @@ void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 
 void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* button)
 {
-    processor.setCompressorState(btnCompressorState->getToggleState());
+    if (button == btnAnalog)
+    {
+        btnAnalog->setToggleState(true, false);
+        btnDigital->setToggleState(false, false);
+
+        processor.setCompressorState(btnAnalog->getToggleState());
+    }
+    else if (button == btnDigital)
+    {
+        btnAnalog->setToggleState(false, false);
+        btnDigital->setToggleState(true, false);
+        processor.setCompressorState(btnAnalog->getToggleState());
+    }
 }

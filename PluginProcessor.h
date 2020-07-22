@@ -67,7 +67,17 @@ public:
     void setAttack(float Attack) { pAttackTime = Attack; }
     void setRelease(float Release) { pReleaseTime = Release; }
 
-    void setCompressorState(int ON_OFF) { this->ON_OFF = ON_OFF; }
+    void setCompressorState(bool analog)
+    {
+        if (analog)
+        {
+            (*processorComp).mTimeConstant = Compressor::TimeConstant::Analog;
+        }
+        else
+        {
+            (*processorComp).mTimeConstant = Compressor::TimeConstant::Digital;
+        }
+    }
 
     //==============================================================================
     // Getter Functions for each parameter
