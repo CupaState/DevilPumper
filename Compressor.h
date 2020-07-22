@@ -38,24 +38,24 @@ public:
     TimeConstant mTimeConstant;
 
 private:
-    float mAttackTime;
-    float mReleaseTime;
-    float mThreshold;
-    float mRatio;
-    float mKneeWidth;
-    float mSampleRate;
-    float mMakeUpGain;
+    float mAttackTime{ 5.0f };
+    float mReleaseTime{ 25.0f };
+    float mThreshold{ -3.0f };
+    float mRatio{ 1.0f };
+    float mKneeWidth{ 5.0f };
+    float mSampleRate{ 44100.0f };
+    float mMakeUpGain{ 0 };
 
     // Compressor ON-OFF state
     int compressorState = 1;
 
-    float mInputGain;
-    float mOutputGain;
-    float mInputLevel;
-    float mOutputLevel;
+    float mInputGain{ 0 };
+    float mOutputGain{ 0 };
+    float mInputLevel{ 0 };
+    float mOutputLevel{ 0 };
 
-    float mPreviousOutputLevel;
-    float mControlVoltage;
+    float mPreviousOutputLevel{ 0 };
+    float mControlVoltage{ 0 };
 
 };
 

@@ -22,20 +22,20 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
 #endif
         .withOutput("Output", AudioChannelSet::stereo(), true)
 #endif
-    )
+    ),
+    parameter(*this, nullptr, "PARAMETER", createParameter())
 #endif
 {
-    pGain = 1.0;
-    pThreshold = 0.0;
-    pRatio = 1.0;
-    pAttackTime = 5.0;
-    pReleaseTime = 5.0;
+    parameter.state = ValueTree("savedParameters");
 
+    pGain = 0.0f;
+    pThreshold = -3.0f;
+    pAttackTime = 5.0f;
+    pReleaseTime = 25.0f;
+    pRatio = 1.0f;
+    pKneeWidth = 5.0f;
+    pOverallGain = 0.0f;
     ON_OFF = 1;
-
-    pOverallGain = 10.0;
-    pKneeWidth = 0.0;
-
     processorComp = new Compressor;
 }
 
@@ -44,6 +44,35 @@ DevilPumperInfinityAudioProcessor::~DevilPumperInfinityAudioProcessor()
 }
 
 //==============================================================================
+
+AudioProcessorValueTreeState::ParameterLayout DevilPumperInfinityAudioProcessor::createParameter()
+{
+    std::vector<std::unique_ptr<RangedAudioParameter>>params;
+
+    auto attackParam = std::make_unique<AudioParameterFloat>(ATTACK_ID, ATTACK_NAME, 1.0f, 250.0f, 5.0f);
+    params.push_back(std::move(attackParam));
+
+    auto releaseParam = std::make_unique<AudioParameterFloat>(RELEASE_ID, RELEASE_NAME, 1.0f, 2500.0f, 25.0f);
+    params.push_back(std::move(releaseParam));
+
+    auto thresholdParam = std::make_unique<AudioParameterFloat>(THRESHOLD_ID, THRESHOLD_NAME, -50.0f, 0.0f, -3.0f);
+    params.push_back(std::move(thresholdParam));
+
+    auto ratioParam = std::make_unique<AudioParameterFloat>(RATIO_ID, RATIO_NAME, 1.0f, 100.0f, 1.0f);
+    params.push_back(std::move(ratioParam));
+
+    auto kneeParam = std::make_unique<AudioParameterFloat>(KNEE_ID, KNEE_NAME, 0.0f, 10.0f, 5.0f);
+    params.push_back(std::move(kneeParam));
+
+    auto gainParam = std::make_unique<AudioParameterFloat>(GAIN_ID, GAIN_NAME, -80.0f, 40.0f, 0.0f);
+    params.push_back(std::move(gainParam));
+
+    auto overallgainParam = std::make_unique<AudioParameterFloat>(OVERALLGAIN_ID, OVERALLGAIN_NAME, -40.0f, 10.0f, 0.0f);
+    params.push_back(std::move(overallgainParam));
+
+    return { params.begin(), params.end() };
+}
+
 const String DevilPumperInfinityAudioProcessor::getName() const
 {
     return JucePlugin_Name;
@@ -109,6 +138,14 @@ void DevilPumperInfinityAudioProcessor::changeProgramName(int index, const Strin
 void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     numChannels = getTotalNumInputChannels();
+
+    pGain = *parameter.getRawParameterValue(GAIN_ID);
+    pThreshold = *parameter.getRawParameterValue(THRESHOLD_ID);
+    pRatio = *parameter.getRawParameterValue(RATIO_ID);
+    pAttackTime = *parameter.getRawParameterValue(ATTACK_ID);
+    pReleaseTime = *parameter.getRawParameterValue(RELEASE_ID);
+    pOverallGain = *parameter.getRawParameterValue(OVERALLGAIN_ID);
+    pKneeWidth = *parameter.getRawParameterValue(OVERALLGAIN_ID);
 
     (*processorComp).prepareToPlay(sampleRate, samplesPerBlock, getTotalNumInputChannels());
     (*processorComp).setParameters(pRatio, pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth);
@@ -199,12 +236,20 @@ AudioProcessorEditor* DevilPumperInfinityAudioProcessor::createEditor()
 //==============================================================================
 void DevilPumperInfinityAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
-
+    std::unique_ptr<XmlElement>xml(parameter.state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 void DevilPumperInfinityAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-
+    std::unique_ptr<XmlElement>theParams(getXmlFromBinary(data, sizeInBytes));
+    if (theParams != nullptr)
+    {
+        if (theParams->hasTagName(parameter.state.getType()));
+        {
+            parameter.state = ValueTree::fromXml(*theParams);
+        }
+    }
 }
 
 //==============================================================================

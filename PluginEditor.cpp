@@ -15,6 +15,16 @@
 DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor(DevilPumperInfinityAudioProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
+    //Attachments
+
+    slOverallGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameter, OVERALLGAIN_ID, slOverallGain);
+    slAttackTimeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameter, ATTACK_ID, slAttackTime);
+    slReleaseTimeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameter, RELEASE_ID, slRelease);
+    slThresholdAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameter, THRESHOLD_ID, slThreshold);
+    slRatioAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameter, RATIO_ID, slRatio);
+    slGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameter, GAIN_ID, slGain);
+    slKneeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameter, KNEE_ID, slKneeWidth);
+
     //SLIDERS
 
     addAndMakeVisible(&slOverallGain);
@@ -130,6 +140,11 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
 
 DevilPumperInfinityAudioProcessorEditor::~DevilPumperInfinityAudioProcessorEditor()
 {
+    delete btnAnalog;
+    btnAnalog = nullptr;
+
+    delete btnDigital;
+    btnDigital = nullptr;
 }
 
 //==============================================================================
@@ -207,6 +222,7 @@ void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* button)
     {
         btnAnalog->setToggleState(false, false);
         btnDigital->setToggleState(true, false);
+
         processor.setCompressorState(btnAnalog->getToggleState());
     }
 }

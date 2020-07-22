@@ -14,6 +14,21 @@
 #include "Compressor.h"
 
 
+#define ATTACK_ID "attack_ID"
+#define ATTACK_NAME "attack_NAME"
+#define RELEASE_ID "release_ID"
+#define RELEASE_NAME "release_NAME"
+#define THRESHOLD_ID "threshold_ID"
+#define THRESHOLD_NAME "threshold_NAME"
+#define RATIO_ID "ratio_ID"
+#define RATIO_NAME "ratio_NAME"
+#define KNEE_ID "knee_ID"
+#define KNEE_NAME "knee_NAME"
+#define OVERALLGAIN_ID "overallgain_ID"
+#define OVERALLGAIN_NAME "overallgain_NAME"
+#define GAIN_ID "gain_ID"
+#define GAIN_NAME "gain_NAME"
+
 //==============================================================================
 /**
 */
@@ -59,13 +74,13 @@ public:
 
     // Setter Functions for each parameter
 
-    void setOverallGain(float OverallGain) { pOverallGain = Decibels::decibelsToGain(OverallGain); }
-    void setKneeWidth(float KneeWidth) { pKneeWidth = KneeWidth; }
-    void setGain(float Gain) { pGain = Decibels::decibelsToGain(Gain); }
-    void setThreshold(float Threshold) { pThreshold = Threshold; }
-    void setRatio(float Ratio) { pRatio = Ratio; }
-    void setAttack(float Attack) { pAttackTime = Attack; }
-    void setRelease(float Release) { pReleaseTime = Release; }
+    void setOverallGain(float OverallGain) { this->pOverallGain = Decibels::decibelsToGain(OverallGain); }
+    void setKneeWidth(float KneeWidth) { this->pKneeWidth = KneeWidth; }
+    void setGain(float Gain) { this->pGain = Decibels::decibelsToGain(Gain); }
+    void setThreshold(float Threshold) { this->pThreshold = Threshold; }
+    void setRatio(float Ratio) { this->pRatio = Ratio; }
+    void setAttack(float Attack) { this->pAttackTime = Attack; }
+    void setRelease(float Release) { this->pReleaseTime = Release; }
 
     void setCompressorState(bool analog)
     {
@@ -90,8 +105,6 @@ public:
     float getAttack() { return pAttackTime; }
     float getReleaseTime() { return pReleaseTime; }
 
-    float getCompressorState() { return ON_OFF; }
-
 private:
 
     ScopedPointer <Compressor> processorComp;
@@ -110,6 +123,11 @@ private:
 
     //Compressor States
     int ON_OFF;
+
+public:
+    AudioProcessorValueTreeState parameter;
+    AudioProcessorValueTreeState::ParameterLayout createParameter();
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };
