@@ -29,12 +29,12 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     pThreshold = 0.0;
     pRatio = 1.0;
     pAttackTime = 5.0;
-    pReleaseTime = 5.0;
+    pReleaseTime = 25.0;
 
     ON_OFF = 1;
 
-    pOverallGain = 10.0;
-    pKneeWidth = 0.0;
+    pOverallGain = 1.0;
+    pKneeWidth = 5.0;
 
     processorComp = new Compressor;
 }

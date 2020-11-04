@@ -22,7 +22,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slOverallGain.setTextValueSuffix("dB");
     slOverallGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slOverallGain.setRange(-40.0, 10.0);
-    slOverallGain.setValue(0.0);
+    //slOverallGain.setValue(0.0);
     slOverallGain.addListener(this);
 
     addAndMakeVisible(&slAttackTime);
@@ -30,7 +30,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slAttackTime.setTextValueSuffix("ms");
     slAttackTime.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slAttackTime.setRange(1.0, 250.0);
-    slAttackTime.setValue(5.0);
+    slAttackTime.setValue(processor.getAttack());
     slAttackTime.addListener(this);
 
     addAndMakeVisible(&slRelease);
@@ -38,7 +38,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slRelease.setTextValueSuffix("ms");
     slRelease.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slRelease.setRange(1.0, 2500.0);
-    slRelease.setValue(25.0);
+    slRelease.setValue(processor.getReleaseTime());
     slRelease.addListener(this);
 
     addAndMakeVisible(&slThreshold);
@@ -46,7 +46,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slThreshold.setTextValueSuffix("dB");
     slThreshold.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slThreshold.setRange(-50.0, 0.0);
-    slThreshold.setValue(-3.0);
+    slThreshold.setValue(processor.getThreshold());
     slThreshold.addListener(this);
 
     addAndMakeVisible(&slRatio);
@@ -54,7 +54,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slRatio.setTextValueSuffix(" :1");
     slRatio.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slRatio.setRange(1.0, 100.0);
-    slRatio.setValue(1.0);
+    slRatio.setValue(processor.getRatio());
     slRatio.addListener(this);
 
     addAndMakeVisible(&slKneeWidth);
@@ -62,7 +62,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slKneeWidth.setTextValueSuffix("dB");
     slKneeWidth.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slKneeWidth.setRange(0.0, 10.0);
-    slKneeWidth.setValue(5.0);
+    slKneeWidth.setValue(processor.getKneeWidth());
     slKneeWidth.addListener(this);
 
     addAndMakeVisible(&slGain);
@@ -70,7 +70,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slGain.setTextValueSuffix("dB");
     slGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
     slGain.setRange(-80.0, 40.0);
-    slGain.setValue(0.0);
+    //slGain.setValue(0.0);
     slGain.addListener(this);
 
     //LABELS
