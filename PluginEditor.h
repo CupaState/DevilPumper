@@ -52,4 +52,13 @@ private:
     Button* btnCompressorState;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
+
+public:
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slOverallGainAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slAttackTimeAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slReleaseAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slThresholdAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slRatioAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slKneeWidthAttach;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slGainAttach;
 };

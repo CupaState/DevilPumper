@@ -15,13 +15,20 @@
 DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor(DevilPumperInfinityAudioProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
+    slOverallGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, OVERALL_GAIN_ID, slOverallGain);
+    slAttackTimeAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, ATTACK_ID, slAttackTime);
+    slReleaseAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, RELEASE_ID, slRelease);
+    slThresholdAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, THRESHOLD_ID, slThreshold);
+    slRatioAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, RATIO_ID, slRatio);
+    slKneeWidthAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, KNEE_ID, slKneeWidth);
+    slGainAttach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, GAIN_ID, slGain);
     //SLIDERS
 
     addAndMakeVisible(&slOverallGain);
     slOverallGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slOverallGain.setTextValueSuffix("dB");
     slOverallGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slOverallGain.setRange(-40.0, 10.0);
+    slOverallGain.setRange(0.0f, 1.0f);
     //slOverallGain.setValue(0.0);
     slOverallGain.addListener(this);
 
@@ -69,7 +76,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slGain.setTextValueSuffix("dB");
     slGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slGain.setRange(-80.0, 40.0);
+    slGain.setRange(0.0f, 1.0f);
     //slGain.setValue(0.0);
     slGain.addListener(this);
 
@@ -129,7 +136,7 @@ void DevilPumperInfinityAudioProcessorEditor::paint(Graphics& g)
     Image background = ImageCache::getFromMemory(BinaryData::BACK_jpg, BinaryData::BACK_jpgSize);
     g.drawImageAt(background, 0, 0);
     g.setFont(15.0f);
-    g.drawFittedText("DevilPumper", getWidth() / 2 - 75, 0, 150, getWidth() / 2 - 75, Justification::centred, 1);
+    g.drawFittedText("DevilPumper", getWidth() / 2 - 75, 0, 150, getWidth() / 2 - 75, Justification::top, 8);
     //g.fillAll(Colours::black);
 }
 
