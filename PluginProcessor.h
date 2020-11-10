@@ -102,6 +102,11 @@ public:
         return std::pow(10.0, *decibels * 0.05);
     }
 
+    float gainToDecibels(float gain)
+    {
+        std::log10(gain) * 20.0f;
+    }
+
     juce::AudioProcessorValueTreeState parameters;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
 
@@ -109,15 +114,15 @@ private:
 
     ScopedPointer<Compressor> processorComp;
 
-    std::atomic<float>* pAttackTime;
-    std::atomic<float>* pReleaseTime;
+    std::atomic<float>* pAttackTime = nullptr;
+    std::atomic<float>* pReleaseTime = nullptr;
 
-    std::atomic<float>* pThreshold;
-    std::atomic<float>* pRatio;
-    std::atomic<float>* pKneeWidth;
+    std::atomic<float>* pThreshold = nullptr;
+    std::atomic<float>* pRatio = nullptr;
+    std::atomic<float>* pKneeWidth = nullptr;
 
-    std::atomic<float>* pOverallGain;
-    std::atomic<float>* pGain;
+    std::atomic<float>* pOverallGain = nullptr;
+    std::atomic<float>* pGain = nullptr;
 
     int numChannels;
 

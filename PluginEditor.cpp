@@ -28,7 +28,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slOverallGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slOverallGain.setTextValueSuffix("dB");
     slOverallGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slOverallGain.setRange(0.0f, 1.0f);
+    //slOverallGain.setRange(0.0f, 1.0f);
     //slOverallGain.setValue(0.0);
     slOverallGain.addListener(this);
 
@@ -36,48 +36,46 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
     slAttackTime.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slAttackTime.setTextValueSuffix("ms");
     slAttackTime.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slAttackTime.setRange(1.0, 250.0);
-    slAttackTime.setValue(processor.getAttack());
+    //slAttackTime.setRange(1.0, 250.0);
+    //slAttackTime.setValue(processor.getAttack());
     slAttackTime.addListener(this);
 
     addAndMakeVisible(&slRelease);
     slRelease.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slRelease.setTextValueSuffix("ms");
     slRelease.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slRelease.setRange(1.0, 2500.0);
-    slRelease.setValue(processor.getReleaseTime());
+    //slRelease.setRange(1.0, 2500.0);
+    //slRelease.setValue(processor.getReleaseTime());
     slRelease.addListener(this);
 
     addAndMakeVisible(&slThreshold);
     slThreshold.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slThreshold.setTextValueSuffix("dB");
     slThreshold.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slThreshold.setRange(-50.0, 0.0);
-    slThreshold.setValue(processor.getThreshold());
+    //slThreshold.setRange(-50.0, 0.0);
+    //slThreshold.setValue(processor.getThreshold());
     slThreshold.addListener(this);
 
     addAndMakeVisible(&slRatio);
     slRatio.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slRatio.setTextValueSuffix(" :1");
     slRatio.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slRatio.setRange(1.0, 100.0);
-    slRatio.setValue(processor.getRatio());
+    //slRatio.setRange(1.0, 100.0);
+    //slRatio.setValue(processor.getRatio());
     slRatio.addListener(this);
 
     addAndMakeVisible(&slKneeWidth);
     slKneeWidth.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slKneeWidth.setTextValueSuffix("dB");
     slKneeWidth.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slKneeWidth.setRange(0.0, 10.0);
-    slKneeWidth.setValue(processor.getKneeWidth());
+    //slKneeWidth.setRange(0.0, 10.0);
+    //slKneeWidth.setValue(processor.getKneeWidth());
     slKneeWidth.addListener(this);
 
     addAndMakeVisible(&slGain);
     slGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
     slGain.setTextValueSuffix("dB");
     slGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slGain.setRange(0.0f, 1.0f);
-    //slGain.setValue(0.0);
     slGain.addListener(this);
 
     //LABELS

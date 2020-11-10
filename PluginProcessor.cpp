@@ -49,6 +49,19 @@ DevilPumperInfinityAudioProcessor::~DevilPumperInfinityAudioProcessor()
 
 AudioProcessorValueTreeState::ParameterLayout DevilPumperInfinityAudioProcessor::createParameter()
 {
+    auto value = [](float value, int) { return String(std::log10(value) * 20.0f); };
+    auto userValue = [](const String& string)
+    {
+        if (string.getFloatValue() >= -48.0f)
+        {
+            return juce::jlimit(0.0f, 2.0f, std::powf(10, string.getFloatValue() * 0.05));
+        }
+        if (string.getFloatValue() < -48.0f)
+        {
+            return 0.0f / 20.0f;
+        }
+    };
+
     std::vector<std::unique_ptr<RangedAudioParameter>> params;
 
     auto attackParam = std::make_unique<AudioParameterFloat>(ATTACK_ID, ATTACK_NAME, 1.0f, 250.0f, 5.0f);
@@ -66,14 +79,15 @@ AudioProcessorValueTreeState::ParameterLayout DevilPumperInfinityAudioProcessor:
     auto kneeParam = std::make_unique<AudioParameterFloat>(KNEE_ID, KNEE_NAME, 0.0f, 10.0f, 5.0f);
     params.push_back(std::move(kneeParam));
 
-    auto gainParam = std::make_unique<AudioParameterFloat>(GAIN_ID, GAIN_NAME, -48.0f, 10.0f, 0.0f);
+    auto gainParam = std::make_unique<AudioParameterFloat>(GAIN_ID, GAIN_NAME, NormalisableRange<float>(0.0f, 2.0f, 0.1f), 1.0f, "", AudioProcessorParameter::inputGain, value, userValue);
     params.push_back(std::move(gainParam));
 
-    auto overallGainParam = std::make_unique<AudioParameterFloat>(OVERALL_GAIN_ID, OVERALL_GAIN_NAME, -48.0f, 10.0f, 0.0f);
+    auto overallGainParam = std::make_unique<AudioParameterFloat>(OVERALL_GAIN_ID, OVERALL_GAIN_NAME, NormalisableRange<float>(0.0f, 2.0f, 0.1f), 1.0f, "", AudioProcessorParameter::inputGain, value, userValue);
     params.push_back(std::move(overallGainParam));
 
     return { params.begin(), params.end() };
 }
+
 const String DevilPumperInfinityAudioProcessor::getName() const
 {
     return JucePlugin_Name;

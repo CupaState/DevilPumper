@@ -21,6 +21,16 @@ Compressor::~Compressor()
 
 }
 
+void Compressor::setParameters(float ratio, float threshold, float attack, float release, float makeUpGain, float kneeWidth)
+{
+    mRatio = ratio;
+    mThreshold = threshold;
+    mAttackTime = attack;
+    mReleaseTime = release;
+    mMakeUpGain = Decibels::gainToDecibels(makeUpGain);
+    mKneeWidth = kneeWidth;
+}
+
 void Compressor::processBlock(AudioSampleBuffer& buffer)
 {
     int bufferSize = buffer.getNumSamples();
@@ -103,16 +113,6 @@ void Compressor::processBlock(AudioSampleBuffer& buffer)
             }
         }
     }
-}
-
-void Compressor::setParameters(float ratio, float threshold, float attack, float release, float makeUpGain, float kneeWidth)
-{
-    mRatio = ratio;
-    mThreshold = threshold;
-    mAttackTime = attack;
-    mReleaseTime = release;
-    mMakeUpGain = Decibels::gainToDecibels(makeUpGain);
-    mKneeWidth = kneeWidth;
 }
 
 void Compressor::prepareToPlay(double samplerate, int samplesPerBlock, int numInputChannels)
