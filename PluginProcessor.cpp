@@ -309,19 +309,33 @@ AudioProcessorEditor* DevilPumperInfinityAudioProcessor::createEditor()
 //==============================================================================
 void DevilPumperInfinityAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
-    std::unique_ptr<juce::XmlElement>xml(parameters.state.createXml());
-    copyXmlToBinary(*xml, destData);
-    saveToTxt(bpm, *pThreshold, pSampleRate, pInputGain, pOutputGain, pInputLevel, pPreviousOutputLevel, pOutputLevel, pControlVoltage, gainInDecibels, pKneeWidth, pGain, pOverallGain);
+    XmlElement xml("MYPLUGINSETTINGS");
+    xml.setAttribute(THRESHOLD_ID, *pThreshold);
+    for (int i = 0; i < getNumParameters(); ++i)
+    {
+        if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters().getUnchecked(i)))
+            xml.setAttribute(p->paramID, p->getValue());
+    }
+
+    copyXmlToBinary(xml, destData);
 }
 
 void DevilPumperInfinityAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-    std::unique_ptr<juce::XmlElement>xmlState(getXmlFromBinary(data, sizeInBytes));
+    std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
     if (xmlState != nullptr)
     {
-        if (xmlState->hasTagName(parameters.state.getType()))
+        // make sure that it's actually our type of XML object..
+        if (xmlState->hasTagName("MYPLUGINSETTINGS"))
         {
-            parameters.state = juce::ValueTree::fromXml(*xmlState);
+            // ok, now pull out our last window size..
+            *pThreshold = xmlState->getIntAttribute(THRESHOLD_ID, *pThreshold);
+
+            // Now reload our parameters..
+            for (int i = 0; i < getNumParameters(); ++i)
+                if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters().getUnchecked(i)))
+                    p->setValue((float)xmlState->getDoubleAttribute(p->paramID, p->getValue()));
         }
     }
 }
