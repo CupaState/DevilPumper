@@ -32,11 +32,7 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     pAttackTime = 5.0f;
     pReleaseTime = 25.0f;
     pOverallGain = 1.0f;
-    pKneeWidth = 2.0f;
-
-    ON_OFF = 1;
-
-    processorComp = new Compressor;
+    pKneeWidth = 5.0f;
 
     parameters.state = ValueTree("savedParameters");
 }
@@ -109,6 +105,24 @@ void DevilPumperInfinityAudioProcessor::setCurrentProgram(int index)
 {
 }
 
+/*void DevilPumperInfinityAudioProcessor::getCurrentProgramStateInformation(MemoryBlock& destData)
+{
+    std::unique_ptr<juce::XmlElement>xml(parameters.state.createXml());
+    copyXmlToBinary(*xml, destData);
+}
+
+void DevilPumperInfinityAudioProcessor::setCurrentProgramStateInformation(const void* data, int sizeInBytes)
+{
+    std::unique_ptr<juce::XmlElement>xmlState(getXmlFromBinary(data, sizeInBytes));
+    if (xmlState != nullptr)
+    {
+        if (xmlState->hasTagName(parameters.state.getType()))
+        {
+            parameters.state = juce::ValueTree::fromXml(*xmlState);
+        }
+    }
+}*/
+
 const String DevilPumperInfinityAudioProcessor::getProgramName(int index)
 {
     return {};
@@ -122,9 +136,9 @@ void DevilPumperInfinityAudioProcessor::changeProgramName(int index, const Strin
 void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     numChannels = getTotalNumInputChannels();
-
-    (*processorComp).prepareToPlay(sampleRate, samplesPerBlock, getTotalNumInputChannels());
-    (*processorComp).setParameters(pRatio, *pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth);
+    gainInDecibels = Decibels::gainToDecibels(pGain);
+    pSampleRate = getSampleRate();
+    pPreviousOutputLevel = 0.0f;
 }
 
 void DevilPumperInfinityAudioProcessor::releaseResources()
@@ -157,6 +171,87 @@ bool DevilPumperInfinityAudioProcessor::isBusesLayoutSupported(const BusesLayout
 }
 #endif
 
+
+void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer)
+{
+    int bufferSize = buffer.getNumSamples();
+    int numChannels = buffer.getNumChannels(); // number of channels
+    int M = round(numChannels / 2); // number of stereo channels
+
+    // create blank input buffer to add to
+    AudioSampleBuffer inputBuffer(M, bufferSize);
+    inputBuffer.clear();
+
+    for (int m = 0; m < M; ++m) //For each channel pair of channels
+    {
+        if (*pThreshold < 0)
+        {
+            // Mix down left-right to analyse the input
+            inputBuffer.addFrom(m, 0, buffer, m * 2, 0, bufferSize, 0.5);
+            inputBuffer.addFrom(m, 0, buffer, m * 2 + 1, 0, bufferSize, 0.5);
+
+            // compression : calculates the control voltage
+            float alphaAttack = exp(-1 / (0.001 * pSampleRate * pAttackTime));
+            float alphaRelease = exp(-1 / (0.001 * pSampleRate * pReleaseTime));
+
+            for (int i = 0; i < bufferSize; ++i)
+            {
+                //Level detection- estimate level using peak detector
+                if (fabs(buffer.getWritePointer(m)[i]) < 0.000001)
+                {
+                    pInputGain = -120.0;
+                }
+                else
+                {
+                    pInputGain = 20 * log10(fabs(buffer.getWritePointer(m)[i]));
+                }
+
+                // Gain computer - apply input/output curve with kneewidth
+                // Incorporating the SOFT KNEE
+                if (2 * (pInputGain - *pThreshold) >= pKneeWidth)
+                {
+                    // above knee
+                    pOutputGain = *pThreshold + (pInputGain - *pThreshold) / pRatio;
+                }
+                else if (2 * fabs(pInputGain - *pThreshold) <= pKneeWidth)
+                {
+                    // in knee
+                    pOutputGain = pInputGain + (1 / pRatio - 1) * pow(pInputGain - *pThreshold + pKneeWidth / 2, 2) / (2 * pKneeWidth);
+                }
+                else // below knee
+                {
+                    pOutputGain = pInputGain;
+                }
+
+                pInputLevel = pInputGain - pOutputGain;
+
+                //Ballistics- smoothing of the gain
+                if (pInputLevel > pPreviousOutputLevel)
+                {
+                    pOutputLevel = alphaAttack * pPreviousOutputLevel + (1 - alphaAttack) * pInputLevel;
+                }
+                else
+                {
+                    pOutputLevel = alphaRelease * pPreviousOutputLevel + (1 - alphaRelease) * pInputLevel;
+                }
+
+                //find control voltage
+                pControlVoltage = pow(10, (gainInDecibels - pOutputLevel) / 20);
+                pPreviousOutputLevel = pOutputLevel;
+
+                // apply control voltage to both channels
+                buffer.getWritePointer(2 * m + 0)[i] *= pControlVoltage;
+                buffer.getWritePointer(2 * m + 1)[i] *= pControlVoltage;
+            }
+        }
+        else // if threshold = 0, still apply make up gain.
+        {
+            buffer.applyGain(pow(10, (gainInDecibels) / 20));
+        }
+    }
+}
+
+
 void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
@@ -179,18 +274,13 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, 
     // Set buffer to an input
 
     Output.makeCopyOf(buffer);
-    
-    float SampleRate = getSampleRate();
 
     for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
-    // Set the Compressor Parameters
-    (*processorComp).setParameters(pRatio, *pThreshold, pAttackTime, pReleaseTime, pGain, pKneeWidth);
-
     //compression
 
-    (*processorComp).processBlock(Output);
+    compressorMath(Output);
 
     // Sum Each Band
 
@@ -221,7 +311,7 @@ void DevilPumperInfinityAudioProcessor::getStateInformation(MemoryBlock& destDat
 {
     std::unique_ptr<juce::XmlElement>xml(parameters.state.createXml());
     copyXmlToBinary(*xml, destData);
-    saveToTxt(bpm);
+    saveToTxt(bpm, *pThreshold, pSampleRate, pInputGain, pOutputGain, pInputLevel, pPreviousOutputLevel, pOutputLevel, pControlVoltage, gainInDecibels, pKneeWidth, pGain, pOverallGain);
 }
 
 void DevilPumperInfinityAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
@@ -234,7 +324,6 @@ void DevilPumperInfinityAudioProcessor::setStateInformation(const void* data, in
             parameters.state = juce::ValueTree::fromXml(*xmlState);
         }
     }
-    saveToTxt(bpm);
 }
 
 //==============================================================================

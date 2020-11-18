@@ -11,7 +11,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "Compressor.h"
 #include <fstream>
 
 #define ATTACK_ID "attack_id"
@@ -48,6 +47,7 @@ public:
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 #endif
 
+    void compressorMath(AudioSampleBuffer& buffer);
     void processBlock(AudioSampleBuffer&, MidiBuffer&) override;
 
     //==============================================================================
@@ -72,6 +72,8 @@ public:
     //==============================================================================
     void getStateInformation(MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
+    //void getCurrentProgramStateInformation(MemoryBlock& destData) override;
+    //void setCurrentProgramStateInformation(const void* data, int sizeInBytes) override;
 
     // Setter Functions for each parameter
 
@@ -82,8 +84,6 @@ public:
     void setRatio(float Ratio) { pRatio = Ratio; }
     void setAttack(float Attack) { pAttackTime = Attack; }
     void setRelease(float Release) { pReleaseTime = Release; }
-
-    void setCompressorState(int ON_OFF) { this->ON_OFF = ON_OFF; }
 
     //==============================================================================
     // Getter Functions for each parameter
@@ -96,27 +96,72 @@ public:
     float getAttack() { return pAttackTime; }
     float getReleaseTime() { return pReleaseTime; }
 
-    float getCompressorState() { return ON_OFF; }
-
     juce::AudioProcessorValueTreeState parameters;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
 
-    void saveToTxt(float bpm)
+    void saveToTxt(
+        float bpm, 
+        float threshold, 
+        float sampleRate, 
+        float inputGain, 
+        float outputGain, 
+        float inputLevel, 
+        float previousOutputLevel,
+        float outputLevel,
+        float controlVoltage,
+        float gainInDecibels,
+        float knee,
+        float gain,
+        float overallGain
+    )
     {
         std::string strBPM = std::to_string(bpm);
+        std::string strThreshold = std::to_string(threshold);
+        std::string strSampleRate = std::to_string(sampleRate);
+        std::string strInputGain = std::to_string(inputGain);
+        std::string strOutputGain = std::to_string(outputGain);
+        std::string strInputLevel = std::to_string(inputLevel);
+        std::string strPreviousOutputLevel = std::to_string(previousOutputLevel);
+        std::string strOutputLevel = std::to_string(outputLevel);
+        std::string strControlVoltage = std::to_string(controlVoltage);
+        std::string strGainInDecibels = std::to_string(gainInDecibels);
+        std::string strKnee = std::to_string(knee);
+        std::string strGain = std::to_string(gain);
+        std::string strOverallGain = std::to_string(overallGain);
+
         std::ofstream file;
         file.open("D:\\2.txt");
-        file << strBPM << "\n";
+        file <<
+            "bpm = " << strBPM << "\n" << 
+            "threshold = " << strThreshold << "\n" <<
+            "SampleRate = " << strSampleRate << "\n" <<
+            "Input Gain = " << strInputGain << "\n" <<
+            "Output Gain = " << strOutputGain << "\n" <<
+            "Input Level = " << strInputLevel << "\n" <<
+            "Previous Output Level = " << strPreviousOutputLevel << "\n" <<
+            "Output Level = " << strOutputLevel << "\n" <<
+            "Control Voltage = " << strControlVoltage << "\n" <<
+            "Gain in Decibels = " << strGainInDecibels << "\n" <<
+            "Knee Width = " << strKnee << "\n" <<
+            "Gain = " << strGain << "\n" <<
+            "Overall Gain = " << strOverallGain << "\n";
         file.close();
     }
 
 private:
 
-    ScopedPointer<Compressor> processorComp;
-
     AudioPlayHead* playHead;
     AudioPlayHead::CurrentPositionInfo currentPositionInfo;
     float bpm { 130.0f };
+
+    float pSampleRate{ 44100.0f};
+    float pInputGain;
+    float pOutputGain;
+    float pInputLevel;
+    float pPreviousOutputLevel;
+    float pOutputLevel;
+    float pControlVoltage;
+    float gainInDecibels;
 
     float pAttackTime;
     float pReleaseTime;
@@ -129,9 +174,6 @@ private:
     float pGain;
 
     int numChannels;
-
-    //Compressor States
-    int ON_OFF;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };
