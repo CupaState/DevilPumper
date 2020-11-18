@@ -17,7 +17,7 @@
 //==============================================================================
 /**
 */
-class DevilPumperInfinityAudioProcessorEditor : public AudioProcessorEditor, public Slider::Listener, public Button::Listener
+class DevilPumperInfinityAudioProcessorEditor : public AudioProcessorEditor, public Slider::Listener
 {
 public:
     DevilPumperInfinityAudioProcessorEditor(DevilPumperInfinityAudioProcessor&);
@@ -27,38 +27,15 @@ public:
     void paint(Graphics&) override;
     void resized() override;
     void sliderValueChanged(Slider* slider) override;
-    void buttonClicked(Button* button) override;
 
 
 private:
     DevilPumperInfinityAudioProcessor& processor;
 
-    Slider slOverallGain;
-    Slider slAttackTime;
-    Slider slRelease;
     Slider slThreshold;
-    Slider slRatio;
-    Slider slKneeWidth;
-    Slider slGain;
-
-    Label lRelease;
-    Label lOverallGain;
-    Label lAttack;
-    Label lThreshold;
-    Label lRatio;
-    Label lKneeWidth;
-    Label lGain;
-
-    Button* btnCompressorState;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessorEditor)
 
 public:
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slOverallGainAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slAttackTimeAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slReleaseAttach;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slThresholdAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slRatioAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slKneeWidthAttach;
-    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>slGainAttach;
 };

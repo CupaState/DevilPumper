@@ -12,6 +12,7 @@
 
 #include <JuceHeader.h>
 #include "Compressor.h"
+#include <fstream>
 
 #define ATTACK_ID "attack_id"
 #define RELEASE_ID "release_id"
@@ -74,55 +75,58 @@ public:
 
     // Setter Functions for each parameter
 
-    void setOverallGain(float OverallGain) { *pOverallGain = OverallGain; }
-    void setKneeWidth(float KneeWidth) { *pKneeWidth = KneeWidth; }
-    void setGain(float Gain) { *pGain = Gain; }
+    void setOverallGain(float OverallGain) { pOverallGain = OverallGain; }
+    void setKneeWidth(float KneeWidth) { pKneeWidth = KneeWidth; }
+    void setGain(float Gain) { pGain = Gain; }
     void setThreshold(float Threshold) { *pThreshold = Threshold; }
-    void setRatio(float Ratio) { *pRatio = Ratio; }
-    void setAttack(float Attack) { *pAttackTime = Attack; }
-    void setRelease(float Release) { *pReleaseTime = Release; }
+    void setRatio(float Ratio) { pRatio = Ratio; }
+    void setAttack(float Attack) { pAttackTime = Attack; }
+    void setRelease(float Release) { pReleaseTime = Release; }
 
     void setCompressorState(int ON_OFF) { this->ON_OFF = ON_OFF; }
 
     //==============================================================================
     // Getter Functions for each parameter
 
-    float getOverallGain() { return decibelsToGain(pOverallGain); }
-    float getKneeWidth() { return *pKneeWidth; }
-    float getGain() { return decibelsToGain(pGain); }
+    float getOverallGain() { return Decibels::decibelsToGain(pOverallGain); }
+    float getKneeWidth() { return pKneeWidth; }
+    float getGain() { return Decibels::decibelsToGain(pGain); }
     float getThreshold() { return *pThreshold; }
-    float getRatio() { return *pRatio; }
-    float getAttack() { return *pAttackTime; }
-    float getReleaseTime() { return *pReleaseTime; }
+    float getRatio() { return pRatio; }
+    float getAttack() { return pAttackTime; }
+    float getReleaseTime() { return pReleaseTime; }
 
     float getCompressorState() { return ON_OFF; }
 
-    float decibelsToGain(std::atomic<float>* decibels)
-    {
-        return std::pow(10.0, *decibels * 0.05);
-    }
-
-    float gainToDecibels(float gain)
-    {
-        std::log10(gain) * 20.0f;
-    }
-
     juce::AudioProcessorValueTreeState parameters;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
+
+    void saveToTxt(float bpm)
+    {
+        std::string strBPM = std::to_string(bpm);
+        std::ofstream file;
+        file.open("D:\\2.txt");
+        file << strBPM << "\n";
+        file.close();
+    }
 
 private:
 
     ScopedPointer<Compressor> processorComp;
 
-    std::atomic<float>* pAttackTime = nullptr;
-    std::atomic<float>* pReleaseTime = nullptr;
+    AudioPlayHead* playHead;
+    AudioPlayHead::CurrentPositionInfo currentPositionInfo;
+    float bpm { 130.0f };
+
+    float pAttackTime;
+    float pReleaseTime;
 
     std::atomic<float>* pThreshold = nullptr;
-    std::atomic<float>* pRatio = nullptr;
-    std::atomic<float>* pKneeWidth = nullptr;
+    float pRatio;
+    float pKneeWidth;
 
-    std::atomic<float>* pOverallGain = nullptr;
-    std::atomic<float>* pGain = nullptr;
+    float pOverallGain;
+    float pGain;
 
     int numChannels;
 
