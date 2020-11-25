@@ -12,22 +12,14 @@
 
 #include <JuceHeader.h>
 #include <fstream>
+#include <algorithm>
 
-#define ATTACK_ID "attack_id"
-#define RELEASE_ID "release_id"
 #define THRESHOLD_ID "threshold_id"
-#define RATIO_ID "ratio_id"
-#define KNEE_ID "knee_id"
-#define GAIN_ID "gain_id"
-#define OVERALL_GAIN_ID "overall_gain_id"
-
-#define ATTACK_NAME "attack_name"
-#define RELEASE_NAME "release_name"
 #define THRESHOLD_NAME "threshold_name"
-#define RATIO_NAME "ratio_name"
-#define KNEE_NAME "knee_name"
-#define GAIN_NAME "gain_name"
-#define OVERALL_GAIN_NAME "overall_gain_name"
+#define MAX(a, b) (((a)>(b))?(a):(b))
+#define MIX(x0, y1, coeff) (((x0)-(y1))*(coeff)+(y1))
+
+static const double MINVAL = 1.0e-6;
 
 //==============================================================================
 /**
@@ -95,6 +87,11 @@ public:
     float getRatio() { return pRatio; }
     float getAttack() { return pAttackTime; }
     float getReleaseTime() { return pReleaseTime; }
+
+    float Square(float num)
+    {
+        return num * num;
+    }
 
     juce::AudioProcessorValueTreeState parameters;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
@@ -174,6 +171,21 @@ private:
     float pGain;
 
     int numChannels;
+
+    ////////////////////////////////////
+
+    float releaseTimeMax;
+    float attackTimeMaximum;
+    float alphaAttack;
+    float alphaRelease;
+    float slope;
+
+    float PEAK;
+    float RMS;
+    float previousPEAK;
+    float previousRMS;
+    float crestFactor;
+    float smoothingCoeff;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };

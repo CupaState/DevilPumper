@@ -33,6 +33,12 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     pReleaseTime = 25.0f;
     pOverallGain = 1.0f;
     pKneeWidth = 5.0f;
+    releaseTimeMax = 1000.0f;
+    attackTimeMaximum = 80.0f;
+    crestFactor = 2.0f;
+    alphaAttack = 0.0f;
+    alphaRelease = 0.0f;
+    slope = 0.0f;
 
     parameters.state = ValueTree("savedParameters");
 }
@@ -176,36 +182,49 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
 {
     int bufferSize = buffer.getNumSamples();
     int numChannels = buffer.getNumChannels(); // number of channels
-    int M = round(numChannels / 2); // number of stereo channels
+    int channels = round(numChannels / 2); // number of stereo channels
+    float inSquare = 0.0f;
+    slope = 1 / pRatio - 1;
 
     // create blank input buffer to add to
-    AudioSampleBuffer inputBuffer(M, bufferSize);
+    AudioSampleBuffer inputBuffer(channels, bufferSize);
     inputBuffer.clear();
 
-    for (int m = 0; m < M; ++m) //For each channel pair of channels
+    for (int channel = 0; channel < channels; ++channel) //For each channel pair of channels
     {
         if (*pThreshold < 0)
         {
             // Mix down left-right to analyse the input
-            inputBuffer.addFrom(m, 0, buffer, m * 2, 0, bufferSize, 0.5);
-            inputBuffer.addFrom(m, 0, buffer, m * 2 + 1, 0, bufferSize, 0.5);
+            inputBuffer.addFrom(channel, 0, buffer, channel * 2, 0, bufferSize, 0.5);
+            inputBuffer.addFrom(channel, 0, buffer, channel * 2 + 1, 0, bufferSize, 0.5);
 
-            // compression : calculates the control voltage
-            float alphaAttack = exp(-1 / (0.001 * pSampleRate * pAttackTime));
-            float alphaRelease = exp(-1 / (0.001 * pSampleRate * pReleaseTime));
-
-            for (int i = 0; i < bufferSize; ++i)
+            for (int sample = 0; sample < bufferSize; ++sample)
             {
                 //Level detection- estimate level using peak detector
-                if (fabs(buffer.getWritePointer(m)[i]) < 0.000001)
+                if (fabs(buffer.getWritePointer(channel)[sample]) < 0.000001)
                 {
                     pInputGain = -120.0;
                 }
                 else
                 {
-                    pInputGain = 20 * log10(fabs(buffer.getWritePointer(m)[i]));
+                    pInputGain = 20 * log10(fabs(buffer.getWritePointer(channel)[sample]));
                 }
 
+                pAttackTime = 2 * attackTimeMaximum / Square(crestFactor);
+                pReleaseTime = MAX(2 * releaseTimeMax / Square(crestFactor) - pAttackTime, 0.0f);
+
+                // compression : calculates the control voltage
+                alphaAttack = exp(-1 / (pSampleRate * pAttackTime));
+                alphaRelease = exp(-1 / (pSampleRate * pReleaseTime));
+
+                inSquare = MAX(Square(std::fabs(buffer.getWritePointer(channel)[sample])), MINVAL);
+                //Calculate SQUARE of PEAK
+                PEAK = MAX(Square(std::fabs(buffer.getWritePointer(channel)[sample])), Square(previousPEAK) + alphaAttack * (Square(std::fabs(buffer.getWritePointer(channel)[sample]))) - Square(previousPEAK));
+                //Calculate SQUARE of RMS
+                RMS = Square(previousRMS) + alphaAttack * (Square(std::fabs(buffer.getWritePointer(channel)[sample])) - Square(previousRMS));
+                //Calculate CrestFactor
+                crestFactor = std::sqrt(PEAK / RMS);
+                
                 // Gain computer - apply input/output curve with kneewidth
                 // Incorporating the SOFT KNEE
                 if (2 * (pInputGain - *pThreshold) >= pKneeWidth)
@@ -238,10 +257,12 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                 //find control voltage
                 pControlVoltage = pow(10, (gainInDecibels - pOutputLevel) / 20);
                 pPreviousOutputLevel = pOutputLevel;
+                previousPEAK = PEAK;
+                previousRMS = RMS;
 
                 // apply control voltage to both channels
-                buffer.getWritePointer(2 * m + 0)[i] *= pControlVoltage;
-                buffer.getWritePointer(2 * m + 1)[i] *= pControlVoltage;
+                buffer.getWritePointer(2 * channel + 0)[sample] *= pControlVoltage;
+                buffer.getWritePointer(2 * channel + 1)[sample] *= pControlVoltage;
             }
         }
         else // if threshold = 0, still apply make up gain.
