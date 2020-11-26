@@ -184,7 +184,6 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
     int numChannels = buffer.getNumChannels(); // number of channels
     int channels = round(numChannels / 2); // number of stereo channels
     float inSquare = 0.0f;
-    slope = 1 / pRatio - 1;
 
     // create blank input buffer to add to
     AudioSampleBuffer inputBuffer(channels, bufferSize);
@@ -200,24 +199,25 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
 
             for (int sample = 0; sample < bufferSize; ++sample)
             {
+                float currentSample = std::fabs(buffer.getWritePointer(channel)[sample]);
                 //Level detection- estimate level using peak detector
-                if (fabs(buffer.getWritePointer(channel)[sample]) < 0.000001)
+                if (currentSample < 0.000001)
                 {
                     pInputGain = -120.0;
                 }
                 else
                 {
-                    pInputGain = 20 * log10(fabs(buffer.getWritePointer(channel)[sample]));
+                    pInputGain = 20.0 * std::log10(currentSample);
                 }
 
                 pAttackTime = 2 * attackTimeMaximum / Square(crestFactor);
-                pReleaseTime = MAX(2 * releaseTimeMax / Square(crestFactor) - pAttackTime, 0.0f);
+                pReleaseTime = MAX(2 * releaseTimeMax / Square(crestFactor), 0.0f);
 
                 // compression : calculates the control voltage
-                alphaAttack = exp(-1 / (pSampleRate * pAttackTime));
-                alphaRelease = exp(-1 / (pSampleRate * pReleaseTime));
+                alphaAttack = 1.0f - exp(-1.0f / (pSampleRate * pAttackTime));
+                alphaRelease = 1.0f - exp(-1.0f / (pSampleRate * (pReleaseTime - pAttackTime)));
 
-                inSquare = MAX(Square(std::fabs(buffer.getWritePointer(channel)[sample])), MINVAL);
+                inSquare = MAX(Square(currentSample), MINVAL);
                 //Calculate SQUARE of PEAK
                 PEAK = MAX(Square(std::fabs(buffer.getWritePointer(channel)[sample])), Square(previousPEAK) + alphaAttack * (Square(std::fabs(buffer.getWritePointer(channel)[sample]))) - Square(previousPEAK));
                 //Calculate SQUARE of RMS
