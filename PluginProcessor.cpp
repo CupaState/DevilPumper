@@ -28,17 +28,13 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
 {
     pGain = 1.0f;
     pThreshold = parameters.getRawParameterValue(THRESHOLD_ID);
-    pRatio = 80.0f;
-    pAttackTime = 5.0f;
-    pReleaseTime = 25.0f;
+    pRatio = 8.0f;
+    pAttackTime = 0.025f;
+    pReleaseTime = 0.078f;
     pOverallGain = 1.0f;
-    pKneeWidth = 5.0f;
-    releaseTimeMax = 1000.0f;
-    attackTimeMaximum = 80.0f;
-    crestFactor = 2.0f;
-    alphaAttack = 0.0f;
-    alphaRelease = 0.0f;
-    slope = 0.0f;
+    pKneeWidth = 2.0f;
+    logOutputGain = 0.0f;
+    logOutputLevel = 0.0f;
 
     parameters.state = ValueTree("savedParameters");
 }
@@ -111,24 +107,6 @@ void DevilPumperInfinityAudioProcessor::setCurrentProgram(int index)
 {
 }
 
-/*void DevilPumperInfinityAudioProcessor::getCurrentProgramStateInformation(MemoryBlock& destData)
-{
-    std::unique_ptr<juce::XmlElement>xml(parameters.state.createXml());
-    copyXmlToBinary(*xml, destData);
-}
-
-void DevilPumperInfinityAudioProcessor::setCurrentProgramStateInformation(const void* data, int sizeInBytes)
-{
-    std::unique_ptr<juce::XmlElement>xmlState(getXmlFromBinary(data, sizeInBytes));
-    if (xmlState != nullptr)
-    {
-        if (xmlState->hasTagName(parameters.state.getType()))
-        {
-            parameters.state = juce::ValueTree::fromXml(*xmlState);
-        }
-    }
-}*/
-
 const String DevilPumperInfinityAudioProcessor::getProgramName(int index)
 {
     return {};
@@ -142,9 +120,10 @@ void DevilPumperInfinityAudioProcessor::changeProgramName(int index, const Strin
 void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     numChannels = getTotalNumInputChannels();
-    gainInDecibels = Decibels::gainToDecibels(pGain);
     pSampleRate = getSampleRate();
     pPreviousOutputLevel = 0.0f;
+    logInputLevel = 0.0f;
+    logThreshold = 0.0f;
 }
 
 void DevilPumperInfinityAudioProcessor::releaseResources()
@@ -182,92 +161,67 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
 {
     int bufferSize = buffer.getNumSamples();
     int numChannels = buffer.getNumChannels(); // number of channels
-    int channels = round(numChannels / 2); // number of stereo channels
-    float inSquare = 0.0f;
+    int M = round(numChannels / 2); // number of stereo channels
 
     // create blank input buffer to add to
-    AudioSampleBuffer inputBuffer(channels, bufferSize);
+    AudioSampleBuffer inputBuffer(M, bufferSize);
     inputBuffer.clear();
 
-    for (int channel = 0; channel < channels; ++channel) //For each channel pair of channels
+    for (int m = 0; m < M; ++m) //For each channel pair of channels
     {
         if (*pThreshold < 0)
         {
             // Mix down left-right to analyse the input
-            inputBuffer.addFrom(channel, 0, buffer, channel * 2, 0, bufferSize, 0.5);
-            inputBuffer.addFrom(channel, 0, buffer, channel * 2 + 1, 0, bufferSize, 0.5);
+            inputBuffer.addFrom(m, 0, buffer, m * 2, 0, bufferSize, 0.5);
+            inputBuffer.addFrom(m, 0, buffer, m * 2 + 1, 0, bufferSize, 0.5);
+
+            float alpha_attack = 1.0 - std::exp(-1 / (pSampleRate * pAttackTime));
+            float alpha_release = 1.0 - std::exp(-1 / (pSampleRate * pReleaseTime));
 
             for (int sample = 0; sample < bufferSize; ++sample)
             {
-                float currentSample = std::fabs(buffer.getWritePointer(channel)[sample]);
-                //Level detection- estimate level using peak detector
-                if (currentSample < 0.000001)
+                if (std::fabs(buffer.getWritePointer(m)[sample]) < 0.000001)
                 {
-                    pInputGain = -120.0;
+                    logInputGain = std::log(std::pow(10.0, -120.0f / 20.0));
                 }
                 else
                 {
-                    pInputGain = 20.0 * std::log10(currentSample);
+                    logInputGain = std::log(std::fabs(buffer.getWritePointer(m)[sample]));
                 }
 
-                pAttackTime = 2 * attackTimeMaximum / Square(crestFactor);
-                pReleaseTime = MAX(2 * releaseTimeMax / Square(crestFactor), 0.0f);
+                logThreshold = std::log(std::pow(10, *pThreshold / 20.0));
 
-                // compression : calculates the control voltage
-                alphaAttack = 1.0f - exp(-1.0f / (pSampleRate * pAttackTime));
-                alphaRelease = 1.0f - exp(-1.0f / (pSampleRate * (pReleaseTime - pAttackTime)));
-
-                inSquare = MAX(Square(currentSample), MINVAL);
-                //Calculate SQUARE of PEAK
-                PEAK = MAX(Square(std::fabs(buffer.getWritePointer(channel)[sample])), Square(previousPEAK) + alphaAttack * (Square(std::fabs(buffer.getWritePointer(channel)[sample]))) - Square(previousPEAK));
-                //Calculate SQUARE of RMS
-                RMS = Square(previousRMS) + alphaAttack * (Square(std::fabs(buffer.getWritePointer(channel)[sample])) - Square(previousRMS));
-                //Calculate CrestFactor
-                crestFactor = std::sqrt(PEAK / RMS);
-                
-                // Gain computer - apply input/output curve with kneewidth
-                // Incorporating the SOFT KNEE
-                if (2 * (pInputGain - *pThreshold) >= pKneeWidth)
+                if (logInputGain > logThreshold)
                 {
-                    // above knee
-                    pOutputGain = *pThreshold + (pInputGain - *pThreshold) / pRatio;
-                }
-                else if (2 * fabs(pInputGain - *pThreshold) <= pKneeWidth)
-                {
-                    // in knee
-                    pOutputGain = pInputGain + (1 / pRatio - 1) * pow(pInputGain - *pThreshold + pKneeWidth / 2, 2) / (2 * pKneeWidth);
-                }
-                else // below knee
-                {
-                    pOutputGain = pInputGain;
-                }
-
-                pInputLevel = pInputGain - pOutputGain;
-
-                //Ballistics- smoothing of the gain
-                if (pInputLevel > pPreviousOutputLevel)
-                {
-                    pOutputLevel = alphaAttack * pPreviousOutputLevel + (1 - alphaAttack) * pInputLevel;
+                    logOutputGain = logThreshold + (logInputGain - logThreshold) / pRatio;
                 }
                 else
                 {
-                    pOutputLevel = alphaRelease * pPreviousOutputLevel + (1 - alphaRelease) * pInputLevel;
+                    logOutputGain = logInputGain;
                 }
 
-                //find control voltage
-                pControlVoltage = pow(10, (gainInDecibels - pOutputLevel) / 20);
-                pPreviousOutputLevel = pOutputLevel;
-                previousPEAK = PEAK;
-                previousRMS = RMS;
+                logInputLevel = logInputGain - logOutputGain;
 
-                // apply control voltage to both channels
-                buffer.getWritePointer(2 * channel + 0)[sample] *= pControlVoltage;
-                buffer.getWritePointer(2 * channel + 1)[sample] *= pControlVoltage;
+                if (logInputLevel > pPreviousOutputLevel)
+                {
+                    logOutputLevel = pPreviousOutputLevel + alpha_attack * (logInputLevel - pPreviousOutputLevel);
+                }
+                else
+                {
+                    logOutputLevel = pPreviousOutputLevel + alpha_release * (logInputLevel - pPreviousOutputLevel);
+                }
+
+                pPreviousOutputLevel = logOutputLevel;
+
+                pControlVoltage = std::exp(-logOutputLevel);
+
+                buffer.getWritePointer(2 * m + 0)[sample] *= pControlVoltage;
+                buffer.getWritePointer(2 * m + 1)[sample] *= pControlVoltage;
             }
         }
         else // if threshold = 0, still apply make up gain.
         {
-            buffer.applyGain(pow(10, (gainInDecibels) / 20));
+            buffer.applyGain(pGain);
         }
     }
 }
@@ -281,12 +235,6 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, 
     const int totalNumOutputChannels = getTotalNumOutputChannels();
 
     const int numSamples = buffer.getNumSamples();
-
-    playHead = this->getPlayHead();
-    if (playHead != nullptr && playHead -> getCurrentPosition(currentPositionInfo))
-    {
-        bpm = currentPositionInfo.bpm;
-    }
 
     // Initialise Buffer
 
