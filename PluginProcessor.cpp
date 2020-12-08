@@ -28,13 +28,16 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
 {
     pGain = 1.0f;
     pThreshold = parameters.getRawParameterValue(THRESHOLD_ID);
-    pRatio = 8.0f;
-    pAttackTime = 0.025f;
-    pReleaseTime = 0.078f;
+    pRatio = 80.0f;
+    pAttackTime = 0.030f;
+    pReleaseTime = 0.0f;
     pOverallGain = 1.0f;
     pKneeWidth = 2.0f;
     logOutputGain = 0.0f;
     logOutputLevel = 0.0f;
+    crestPeak = MINVAL;
+    crestRMS = MINVAL;
+    crestFactor = 0.0;
 
     parameters.state = ValueTree("savedParameters");
 }
@@ -176,10 +179,21 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
             inputBuffer.addFrom(m, 0, buffer, m * 2 + 1, 0, bufferSize, 0.5);
 
             float alpha_attack = 1.0 - std::exp(-1 / (pSampleRate * pAttackTime));
-            float alpha_release = 1.0 - std::exp(-1 / (pSampleRate * pReleaseTime));
+            float alpha_release = 0.0;
 
             for (int sample = 0; sample < bufferSize; ++sample)
             {
+                averageTime = (MAXATTACKTIME + MAXRELEASETIME) / 2.0;
+                alpha = 1.0 - std::exp(-1.0 / (pSampleRate * averageTime));
+                inputSquare = std::pow(std::fabs(buffer.getWritePointer(m)[sample]), 2.0);
+
+                crestPeak = std::max(inputSquare, crestPeak + alpha * (inputSquare - crestPeak));
+                crestRMS = crestRMS + alpha * (inputSquare - crestRMS);
+                crestFactor = std::log(std::sqrt(crestPeak / crestRMS));
+
+                pReleaseTime = std::max((2 * MAXRELEASETIME / crestFactor - pAttackTime) / 20.0, 0.0);
+                alpha_release = 1.0 - std::exp(-1 / (pSampleRate * pReleaseTime));
+
                 if (std::fabs(buffer.getWritePointer(m)[sample]) < 0.000001)
                 {
                     logInputGain = std::log(std::pow(10.0, -120.0f / 20.0));
@@ -285,6 +299,8 @@ void DevilPumperInfinityAudioProcessor::getStateInformation(MemoryBlock& destDat
         if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters().getUnchecked(i)))
             xml.setAttribute(p->paramID, p->getValue());
     }
+
+    saveToTxt(pAttackTime, pReleaseTime);
 
     copyXmlToBinary(xml, destData);
 }
