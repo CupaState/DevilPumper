@@ -193,6 +193,11 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                 crestRMS = crestRMS + alpha * (inputSquare - crestRMS);
                 crestFactor = std::log(std::sqrt(crestPeak / crestRMS));
 
+                if (crestFactor <= 0.0)
+                {
+                    crestFactor = MINVAL;
+                }
+
                 pAttackTime = (2 * MAXATTACKTIME / crestFactor) / 10.0;
                 pReleaseTime = std::max((2 * MAXRELEASETIME / crestFactor - pAttackTime) / 20.0, 0.0);
 
@@ -238,7 +243,7 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                 pPreviousOutputLevel = logOutputLevel;
 
                 cv_estimate = logThreshold * (1.0 - 1.0 / pRatio) / 2.0;
-                float cv_dev_prev = 1.0f;
+                float cv_dev_prev = 0.1f;
                 cv_dev = alpha_for_cv * cv_dev_prev + (1.0 - alpha_for_cv) * (logOutputLevel + cv_estimate);
 
                 pControlVoltage = std::exp(-(logOutputLevel - cv_dev));
