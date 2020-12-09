@@ -116,6 +116,7 @@ private:
     float logOutputLevel;
 
     float crestPeak, crestRMS, crestFactor, averageTime, inputSquare, alpha;
+    float cv_estimate, cv_dev, alpha_time_for_cv, alpha_for_cv;
 
     float pAttackTime;
     float pReleaseTime;
