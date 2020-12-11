@@ -65,12 +65,11 @@ public:
     //==============================================================================
     void getStateInformation(MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
-    //void getCurrentProgramStateInformation(MemoryBlock& destData) override;
-    //void setCurrentProgramStateInformation(const void* data, int sizeInBytes) override;
 
     // Setter Functions for each parameter
 
-    void setThreshold(float Threshold) { *pThreshold = Threshold; }
+    void setThreshold(float threshold) { *pThreshold = threshold; }
+    float setOverallGain(float threshold) { return 1.0 + (1.0 - std::pow(10.0, threshold / 20.0));}
 
     //==============================================================================
     // Getter Functions for each parameter
@@ -95,11 +94,6 @@ public:
 
 private:
 
-    double param_to_log(double x, double mn, double mx)
-    {
-        return exp(log(mn) + x * (log(mx) - log(mn)));
-    }
-
     float pSampleRate{ 44100.0f };
     float pInputGain;
     float pOutputGain;
@@ -117,6 +111,9 @@ private:
 
     float crestPeak, crestRMS, crestFactor, averageTime, inputSquare, alpha;
     float cv_estimate, cv_dev, alpha_time_for_cv, alpha_for_cv;
+    float range{ -40.0f };
+    float logRange{ std::log(pow(10.0f, range / 20.0f)) };
+    float cv_dev_prev = 0.1 ;
 
     float pAttackTime;
     float pReleaseTime;

@@ -32,13 +32,14 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     pAttackTime = 0.030f;
     pReleaseTime = 0.091f;
     pOverallGain = 1.0f;
+    pInputGain = 1.0f;
     pKneeWidth = 2.0f;
     logOutputGain = 0.0f;
     logOutputLevel = 0.0f;
     crestPeak = MINVAL;
     crestRMS = MINVAL;
     crestFactor = 0.0f;
-    alpha_time_for_cv = 2.0f;
+    alpha_time_for_cv = 3.0f;
     alpha_for_cv = std::exp(-1.0 / (pSampleRate * alpha_time_for_cv));
 
     parameters.state = ValueTree("savedParameters");
@@ -188,6 +189,7 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                 averageTime = (MAXATTACKTIME + MAXRELEASETIME) / 2.0;
                 alpha = 1.0 - std::exp(-1.0 / (pSampleRate * averageTime));
                 inputSquare = std::pow(std::fabs(buffer.getWritePointer(m)[sample]), 2.0);
+                pInputGain = std::fabs(buffer.getWritePointer(m)[sample]);
 
                 crestPeak = std::max(inputSquare, crestPeak + alpha * (inputSquare - crestPeak));
                 crestRMS = crestRMS + alpha * (inputSquare - crestRMS);
@@ -198,8 +200,8 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                     crestFactor = MINVAL;
                 }
 
-                pAttackTime = (2 * MAXATTACKTIME / crestFactor) / 10.0;
-                pReleaseTime = std::max((2 * MAXRELEASETIME / crestFactor - pAttackTime) / 20.0, 0.0);
+                pAttackTime = (2 * MAXATTACKTIME / crestFactor) / 3.0;
+                pReleaseTime = std::max((2 * MAXRELEASETIME / crestFactor - pAttackTime) / 10.0, 0.0);
 
                 if (pAttackTime > pReleaseTime)
                 {
@@ -209,20 +211,20 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                 alpha_attack = 1.0 - std::exp(-1.0 / (pSampleRate * pAttackTime));
                 alpha_release = 1.0 - std::exp(-1.0 / (pSampleRate * pReleaseTime));
 
-                if (std::fabs(buffer.getWritePointer(m)[sample]) < 0.000001)
+                if (pInputGain < 0.000001)
                 {
                     logInputGain = std::log(std::pow(10.0, -120.0f / 20.0));
                 }
                 else
                 {
-                    logInputGain = std::log(std::fabs(buffer.getWritePointer(m)[sample]));
+                    logInputGain = std::log(pInputGain);
                 }
 
                 logThreshold = std::log(std::pow(10, *pThreshold / 20.0));
 
                 if (logInputGain > logThreshold)
                 {
-                    logOutputGain = logThreshold + (logInputGain - logThreshold) / pRatio;
+                    logOutputGain = logThreshold + logRange;
                 }
                 else
                 {
@@ -237,13 +239,13 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                 }
                 else
                 {
-                    logOutputLevel = pPreviousOutputLevel + alpha_release * (logInputLevel - pPreviousOutputLevel);
+                    logOutputLevel = (pPreviousOutputLevel + alpha_release * (logInputLevel - pPreviousOutputLevel)) / (1.0 + alpha_release * 2.5);
                 }
 
                 pPreviousOutputLevel = logOutputLevel;
 
-                cv_estimate = logThreshold * (1.0 - 1.0 / pRatio) / 2.0;
-                float cv_dev_prev = 0.1f;
+                cv_estimate = logThreshold / 2.0;
+                
                 cv_dev = alpha_for_cv * cv_dev_prev + (1.0 - alpha_for_cv) * (logOutputLevel + cv_estimate);
 
                 pControlVoltage = std::exp(-(logOutputLevel - cv_dev));
@@ -293,7 +295,7 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, 
         buffer.addFrom(channel, 0, Output, channel, 0, numSamples, 1.0);
     }
 
-    buffer.applyGain(pOverallGain);
+    buffer.applyGain(setOverallGain(*pThreshold));
 }
 
 
