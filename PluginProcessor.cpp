@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -26,27 +16,31 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     parameters(*this, nullptr, juce::Identifier("parameters"), createParameter())
 #endif
 {
-    pGain = 1.0f;
-    pThreshold = parameters.getRawParameterValue(THRESHOLD_ID);
-    pRatio = 99.0f;
-    pAttackTime = 0.030f;
-    pReleaseTime = 0.091f;
-    pOverallGain = 1.0f;
-    pInputGain = 1.0f;
-    pKneeWidth = 2.0f;
-    logOutputGain = 0.0f;
-    logOutputLevel = 0.0f;
-    crestPeak = MINVAL;
-    crestRMS = MINVAL;
-    crestFactor = 0.0f;
-    alpha_time_for_cv = 3.0f;
-    alpha_for_cv = std::exp(-1.0 / (pSampleRate * alpha_time_for_cv));
+    threshold = parameters.getRawParameterValue(THRESHOLD_ID);
+    ratio = 4.0f;
+    attack_time = 0.030f;
+    release_time = 0.091f;
+    input_gain = 0.0f;
+    log_output_gain = 0.0f;
+    log_output_level = 0.0f;
+    log_input_level = 0.0f;
+    log_threhsold = 0.0f;
+    crest_PEAK = MINVAL;
+    crest_RMS = MINVAL;
+    crest_factor = 0.0f;
+    cv_dev_const = 0.1f;
+    average_time = 0.0f;
+    alpha_for_cv = 0.999992f; // alpha_time_for_cv = 3.0f; std::exp(-1.0f / (pSampleRate * alpha_time_for_cv));
+    log_range = -4.605170f; //range = -40.0; log_range = std::log(std::powf(10.0f, range / 20.0f));
+    mode = 0;
 
     parameters.state = ValueTree("savedParameters");
 }
 
 DevilPumperInfinityAudioProcessor::~DevilPumperInfinityAudioProcessor()
 {
+    threshold = nullptr;
+    delete threshold;
 }
 
 //==============================================================================
@@ -55,8 +49,10 @@ AudioProcessorValueTreeState::ParameterLayout DevilPumperInfinityAudioProcessor:
 {
     std::vector<std::unique_ptr<RangedAudioParameter>> params;
 
-    auto thresholdParam = std::make_unique<AudioParameterFloat>(THRESHOLD_ID, THRESHOLD_NAME, -50.0f, 0.0f, 0.0f);
-    params.push_back(std::move(thresholdParam));
+    auto threshold_param = std::make_unique<AudioParameterFloat>(THRESHOLD_ID, THRESHOLD_NAME, -50.0f, 0.0f, 0.0f);
+    params.push_back(std::move(threshold_param));
+    auto switcher_param = std::make_unique<AudioParameterFloat>(SWITCHER_ID, SWITCHER_NAME, 0.0f, 1.0f, 0.0f);
+    params.push_back(std::move(switcher_param));
 
     return { params.begin(), params.end() };
 }
@@ -125,11 +121,7 @@ void DevilPumperInfinityAudioProcessor::changeProgramName(int index, const Strin
 //==============================================================================
 void DevilPumperInfinityAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    numChannels = getTotalNumInputChannels();
-    pSampleRate = getSampleRate();
-    pPreviousOutputLevel = 0.0f;
-    logInputLevel = 0.0f;
-    logThreshold = 0.0f;
+    sample_rate = (float)getSampleRate();
 }
 
 void DevilPumperInfinityAudioProcessor::releaseResources()
@@ -165,98 +157,112 @@ bool DevilPumperInfinityAudioProcessor::isBusesLayoutSupported(const BusesLayout
 
 void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer)
 {
-    int bufferSize = buffer.getNumSamples();
-    int numChannels = buffer.getNumChannels(); // number of channels
-    int M = round(numChannels / 2); // number of stereo channels
+    const int bufferSize = buffer.getNumSamples();
+    const int numChannels = buffer.getNumChannels(); // number of channels
 
-    // create blank input buffer to add to
-    AudioSampleBuffer inputBuffer(M, bufferSize);
-    inputBuffer.clear();
-
-    for (int m = 0; m < M; ++m) //For each channel pair of channels
+    for (int ch = 0; ch < 1; ++ch) //For each channel pair of channels
     {
-        if (*pThreshold < 0)
+        float alpha_attack = 0.0f;
+        float alpha_release = 0.0f;
+
+        for (int sample = 0; sample < bufferSize; ++sample)
         {
-            // Mix down left-right to analyse the input
-            inputBuffer.addFrom(m, 0, buffer, m * 2, 0, bufferSize, 0.5);
-            inputBuffer.addFrom(m, 0, buffer, m * 2 + 1, 0, bufferSize, 0.5);
+            average_time = (MAXATTACKTIME + MAXRELEASETIME) / 2.0f;
+            alpha_average = 1.0 - std::exp(-1.0f / (sample_rate * average_time));
+            input_gain = std::fabs(buffer.getWritePointer(ch)[sample]);
+            input_square = input_gain * input_gain;
 
-            float alpha_attack = 0.0f;
-            float alpha_release = 0.0f;
+            crest_PEAK = std::fmax(input_square, crest_PEAK + alpha_average * (input_square - crest_PEAK));
+            crest_RMS = crest_RMS + alpha_average * (input_square - crest_RMS);
+            crest_factor = std::log(std::sqrt(crest_PEAK / crest_RMS));
 
-            for (int sample = 0; sample < bufferSize; ++sample)
+            if (crest_factor <= 0.0f)
             {
-                averageTime = (MAXATTACKTIME + MAXRELEASETIME) / 2.0;
-                alpha = 1.0 - std::exp(-1.0 / (pSampleRate * averageTime));
-                inputSquare = std::pow(std::fabs(buffer.getWritePointer(m)[sample]), 2.0);
-                pInputGain = std::fabs(buffer.getWritePointer(m)[sample]);
-
-                crestPeak = std::max(inputSquare, crestPeak + alpha * (inputSquare - crestPeak));
-                crestRMS = crestRMS + alpha * (inputSquare - crestRMS);
-                crestFactor = std::log(std::sqrt(crestPeak / crestRMS));
-
-                if (crestFactor <= 0.0)
-                {
-                    crestFactor = MINVAL;
-                }
-
-                pAttackTime = (2 * MAXATTACKTIME / crestFactor) / 3.0;
-                pReleaseTime = std::max((2 * MAXRELEASETIME / crestFactor - pAttackTime) / 10.0, 0.0);
-
-                if (pAttackTime > pReleaseTime)
-                {
-                    pReleaseTime = pAttackTime + pReleaseTime;
-                }
-
-                alpha_attack = 1.0 - std::exp(-1.0 / (pSampleRate * pAttackTime));
-                alpha_release = 1.0 - std::exp(-1.0 / (pSampleRate * pReleaseTime));
-
-                if (pInputGain < 0.000001)
-                {
-                    logInputGain = std::log(std::pow(10.0, -120.0f / 20.0));
-                }
-                else
-                {
-                    logInputGain = std::log(pInputGain);
-                }
-
-                logThreshold = std::log(std::pow(10, *pThreshold / 20.0));
-
-                if (logInputGain > logThreshold)
-                {
-                    logOutputGain = logThreshold + logRange;
-                }
-                else
-                {
-                    logOutputGain = logInputGain;
-                }
-
-                logInputLevel = logInputGain - logOutputGain;
-
-                if (logInputLevel > pPreviousOutputLevel)
-                {
-                    logOutputLevel = pPreviousOutputLevel + alpha_attack * (logInputLevel - pPreviousOutputLevel);
-                }
-                else
-                {
-                    logOutputLevel = (pPreviousOutputLevel + alpha_release * (logInputLevel - pPreviousOutputLevel)) / (1.0 + alpha_release * 2.5);
-                }
-
-                pPreviousOutputLevel = logOutputLevel;
-
-                cv_estimate = logThreshold / 2.0;
-                
-                cv_dev = alpha_for_cv * cv_dev_prev + (1.0 - alpha_for_cv) * (logOutputLevel + cv_estimate);
-
-                pControlVoltage = std::exp(-(logOutputLevel - cv_dev));
-
-                buffer.getWritePointer(2 * m + 0)[sample] *= pControlVoltage;
-                buffer.getWritePointer(2 * m + 1)[sample] *= pControlVoltage;
+                crest_factor = MINVAL;
             }
-        }
-        else // if threshold = 0, still apply make up gain.
-        {
-            buffer.applyGain(pGain);
+
+            switch (mode)
+            {
+                case 0:
+                {
+                    attack_time = (2.0f * MAXATTACKTIME / crest_factor) / 3.0f;
+                    release_time = std::fmax((2.0f * MAXRELEASETIME / crest_factor - attack_time) / 10.0f, 0.0f);
+                    break;
+                }
+                case 1:
+                {
+                    attack_time = (2.0f * MAXATTACKTIME / crest_factor) / 10.0f;
+                    release_time = std::fmax((2.0f * MAXRELEASETIME / crest_factor - attack_time) / 5.0f, 0.0f);
+                    break;
+                }
+            }
+
+            if (attack_time > release_time)
+            {
+                release_time = attack_time + release_time;
+            }
+
+            alpha_attack = 1.0f - std::exp(-1.0f / (sample_rate * attack_time));
+            alpha_release = 1.0f - std::exp(-1.0f / (sample_rate * release_time));
+
+            if (input_gain < MINVAL)
+            {
+                log_input_gain = std::log(MINVAL);
+            }
+            else
+            {
+                log_input_gain = std::log(input_gain);
+            }
+
+            log_threhsold = std::log(std::pow(10, *threshold / 20.0));
+
+            switch (mode)
+            {
+                case 0:
+                {
+                    if (log_input_gain > log_threhsold)
+                    {
+                        log_output_gain = log_threhsold + log_range;
+                    }
+                    else
+                    {
+                        log_output_gain = log_input_gain;
+                    }
+                    break;
+                }
+                case 1:
+                {
+                    if (log_input_gain > log_threhsold)
+                    {
+                        log_output_gain = log_threhsold + (log_input_gain - log_threhsold) / ratio;
+                    }
+                    else
+                    {
+                        log_output_gain = log_input_gain;
+                    }
+                    break;
+                }
+            }
+
+            log_input_level = log_input_gain - log_output_gain;
+
+            if (log_input_level > log_output_level)
+            {
+                log_output_level = log_output_level + alpha_attack * (log_input_level - log_output_level);
+            }
+            else
+            {
+                log_output_level = (log_output_level + alpha_release * (log_input_level - log_output_level)) / (1.0f + alpha_release * 2.5f);
+            }
+
+            cv_estimate = log_threhsold / 2.0f;
+                
+            cv_dev = alpha_for_cv * cv_dev_const + (1.0f - alpha_for_cv) * (log_output_level + cv_estimate);
+
+            control_voltage = std::exp(-(log_output_level - cv_dev));
+
+            buffer.getWritePointer(ch)[sample] *= control_voltage;
+            buffer.getWritePointer(ch + 1)[sample] *= control_voltage;
         }
     }
 }
@@ -265,9 +271,6 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
 void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
-
-    const int totalNumInputChannels = getTotalNumInputChannels();
-    const int totalNumOutputChannels = getTotalNumOutputChannels();
 
     const int numSamples = buffer.getNumSamples();
 
@@ -279,23 +282,36 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, 
 
     Output.makeCopyOf(buffer);
 
-    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
-
     //compression
-
-    compressorMath(Output);
-
-    // Sum Each Band
+    if (*threshold < 0)
+    {
+        compressorMath(Output);
+    }
+    else
+    {
+        Output.applyGain(1.0f);
+    }
 
     buffer.clear();
 
-    for (int channel = 0; channel < totalNumInputChannels; channel++)
+    for (int channel = 0; channel < getTotalNumInputChannels(); channel++)
     {
         buffer.addFrom(channel, 0, Output, channel, 0, numSamples, 1.0);
     }
 
-    buffer.applyGain(setOverallGain(*pThreshold));
+    switch (mode)
+    {
+        case(0):
+        {
+            buffer.applyGain(1.0f + setOverallGain(*threshold));
+            break;
+        }
+        case(1):
+        {
+            buffer.applyGain(1.0f + (setOverallGain(*threshold) / 10.0f));
+            break;
+        }
+    }
 }
 
 
@@ -314,14 +330,12 @@ AudioProcessorEditor* DevilPumperInfinityAudioProcessor::createEditor()
 void DevilPumperInfinityAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
     XmlElement xml("MYPLUGINSETTINGS");
-    xml.setAttribute(THRESHOLD_ID, *pThreshold);
+    xml.setAttribute(THRESHOLD_ID, *threshold);
     for (int i = 0; i < getNumParameters(); ++i)
     {
         if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters().getUnchecked(i)))
             xml.setAttribute(p->paramID, p->getValue());
     }
-
-    saveToTxt(pAttackTime, pReleaseTime);
 
     copyXmlToBinary(xml, destData);
 }
@@ -336,8 +350,7 @@ void DevilPumperInfinityAudioProcessor::setStateInformation(const void* data, in
         if (xmlState->hasTagName("MYPLUGINSETTINGS"))
         {
             // ok, now pull out our last window size..
-            *pThreshold = xmlState->getIntAttribute(THRESHOLD_ID, *pThreshold);
-
+            *threshold = xmlState->getIntAttribute(THRESHOLD_ID, *threshold);
             // Now reload our parameters..
             for (int i = 0; i < getNumParameters(); ++i)
                 if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters().getUnchecked(i)))

@@ -1,30 +1,20 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include <JuceHeader.h>
-#include <fstream>
 
 #define THRESHOLD_ID "threshold_id"
 #define THRESHOLD_NAME "threshold_name"
+#define SWITCHER_ID "switcher_id"
+#define SWITCHER_NAME "switcher_name"
 
-static const double MINVAL = 1.0e-6;
-static const double MINATTACKTIME = 0.0001;
-static const double MAXATTACKTIME = 0.2;
-static const double MINRELEASETIME = 0.005;
-static const double MAXRELEASETIME = 2.0;
+static const float MINVAL = 0.000001f;
+static const float MAXATTACKTIME = 0.2f;
+static const float MAXRELEASETIME = 2.0f;
 
 //==============================================================================
 /**
 */
+
 class DevilPumperInfinityAudioProcessor : public AudioProcessor
 {
 public:
@@ -68,64 +58,45 @@ public:
 
     // Setter Functions for each parameter
 
-    void setThreshold(float threshold) { *pThreshold = threshold; }
-    float setOverallGain(float threshold) { return 1.0 + (1.0 - std::pow(10.0, threshold / 20.0));}
+    void setThreshold(float threshold_UI) { *threshold = threshold_UI; }
+    float setOverallGain(float threshold) { return 1.0 - std::pow(10.0, threshold / 20.0); }
+    void setMode(int mode_UI) { mode = mode_UI; }
 
     //==============================================================================
     // Getter Functions for each parameter
 
-    float getThreshold() { return *pThreshold; }
+    float getThreshold() { return *threshold; }
+    int getMode() { return mode; }
 
     juce::AudioProcessorValueTreeState parameters;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
 
-    void saveToTxt(
-        float attack,
-        float release
-    )
-    {
-        std::ofstream file;
-        file.open("D:\\2.txt");
-        file <<
-            "Attack = " << attack * 1000 << "\n" <<
-            "Release = " << release * 1000 << "\n";
-        file.close();
-    }
-
 private:
 
-    float pSampleRate{ 44100.0f };
-    float pInputGain;
-    float pOutputGain;
-    float pInputLevel;
-    float pPreviousOutputLevel;
-    float pOutputLevel;
-    float pControlVoltage;
+    float sample_rate;
+    float input_gain;
+    float output_gain;
+    float input_level;
+    float control_voltage;
 
-    float logInputGain;
-    float logInputLevel;
-    float logThreshold;
-    float coeffThreshold;
-    float logOutputGain;
-    float logOutputLevel;
+    float log_input_gain;
+    float log_input_level;
+    float log_threhsold;
+    float log_output_gain;
+    float log_output_level;
 
-    float crestPeak, crestRMS, crestFactor, averageTime, inputSquare, alpha;
-    float cv_estimate, cv_dev, alpha_time_for_cv, alpha_for_cv;
-    float range{ -40.0f };
-    float logRange{ std::log(pow(10.0f, range / 20.0f)) };
-    float cv_dev_prev = 0.1 ;
+    float crest_PEAK, crest_RMS, crest_factor, average_time, alpha_average, input_square;
+    float cv_estimate, cv_dev, alpha_for_cv;
+    float log_range;
+    float cv_dev_const;
 
-    float pAttackTime;
-    float pReleaseTime;
+    float attack_time;
+    float release_time;
 
-    std::atomic<float>* pThreshold = nullptr;
-    float pRatio;
-    float pKneeWidth;
+    std::atomic<float>* threshold = nullptr;
+    float ratio;
 
-    float pOverallGain;
-    float pGain;
-
-    int numChannels;
+    int mode;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };
