@@ -32,7 +32,7 @@ DevilPumperInfinityAudioProcessor::DevilPumperInfinityAudioProcessor()
     average_time = 0.0f;
     alpha_for_cv = 0.999992f; // alpha_time_for_cv = 3.0f; std::exp(-1.0f / (pSampleRate * alpha_time_for_cv));
     log_range = -4.605170f; //range = -40.0; log_range = std::log(std::powf(10.0f, range / 20.0f));
-    mode = 0;
+    mode = parameters.getRawParameterValue(SWITCHER_ID);
 
     parameters.state = ValueTree("savedParameters");
 }
@@ -181,7 +181,7 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
                 crest_factor = MINVAL;
             }
 
-            switch (mode)
+            switch ((int)*mode)
             {
                 case 0:
                 {
@@ -216,7 +216,7 @@ void DevilPumperInfinityAudioProcessor::compressorMath(AudioSampleBuffer& buffer
 
             log_threhsold = std::log(std::pow(10, *threshold / 20.0));
 
-            switch (mode)
+            switch ((int)*mode)
             {
                 case 0:
                 {
@@ -299,7 +299,7 @@ void DevilPumperInfinityAudioProcessor::processBlock(AudioSampleBuffer& buffer, 
         buffer.addFrom(channel, 0, Output, channel, 0, numSamples, 1.0);
     }
 
-    switch (mode)
+    switch ((int)*mode)
     {
         case(0):
         {
@@ -329,12 +329,21 @@ AudioProcessorEditor* DevilPumperInfinityAudioProcessor::createEditor()
 //==============================================================================
 void DevilPumperInfinityAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
-    XmlElement xml("MYPLUGINSETTINGS");
+    XmlElement xml("savedParameters");
     xml.setAttribute(THRESHOLD_ID, *threshold);
+    xml.setAttribute(SWITCHER_ID, *mode);
     for (int i = 0; i < getNumParameters(); ++i)
     {
         if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters().getUnchecked(i)))
+        {
             xml.setAttribute(p->paramID, p->getValue());
+
+            if (p->paramID == SWITCHER_ID)
+            {
+                p->setValue(*mode);
+                xml.setAttribute(SWITCHER_ID, p->getValue());
+            }
+        }
     }
 
     copyXmlToBinary(xml, destData);
@@ -347,14 +356,17 @@ void DevilPumperInfinityAudioProcessor::setStateInformation(const void* data, in
     if (xmlState != nullptr)
     {
         // make sure that it's actually our type of XML object..
-        if (xmlState->hasTagName("MYPLUGINSETTINGS"))
+        if (xmlState->hasTagName("savedParameters"))
         {
-            // ok, now pull out our last window size..
+            // ok, now pull out our last state..
             *threshold = xmlState->getIntAttribute(THRESHOLD_ID, *threshold);
+            *mode = xmlState->getIntAttribute(SWITCHER_ID, *mode);
             // Now reload our parameters..
             for (int i = 0; i < getNumParameters(); ++i)
                 if (AudioProcessorParameterWithID* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters().getUnchecked(i)))
+                {
                     p->setValue((float)xmlState->getDoubleAttribute(p->paramID, p->getValue()));
+                }
         }
     }
 }

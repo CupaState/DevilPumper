@@ -19,6 +19,7 @@ DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor
 
     //BUTTON
     mode.setButtonText("LIMITER");
+    mode.setState(Button::ButtonState::buttonNormal);
     mode.addListener(this);
     addAndMakeVisible(mode);
 
@@ -75,12 +76,12 @@ void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* click)
     {
         if (processor.getMode() == 0)
         {
-            processor.setMode(1);
+            processor.setMode(1.0f);
             mode.setButtonText("COMPRESSOR");
         }
         else
         {
-            processor.setMode(0);
+            processor.setMode(0.0f);
             mode.setButtonText("LIMITER");
         }
     }

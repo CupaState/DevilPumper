@@ -56,17 +56,17 @@ public:
     void getStateInformation(MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    // Setter Functions for each parameter
+    // Setter Functions
 
     void setThreshold(float threshold_UI) { *threshold = threshold_UI; }
     float setOverallGain(float threshold) { return 1.0 - std::pow(10.0, threshold / 20.0); }
-    void setMode(int mode_UI) { mode = mode_UI; }
+    void setMode(float mode_UI) { *mode = mode_UI; };
 
     //==============================================================================
-    // Getter Functions for each parameter
+    // Getter Functions
 
     float getThreshold() { return *threshold; }
-    int getMode() { return mode; }
+    int getMode() { return *mode; }
 
     juce::AudioProcessorValueTreeState parameters;
     AudioProcessorValueTreeState::ParameterLayout createParameter();
@@ -96,7 +96,7 @@ private:
     std::atomic<float>* threshold = nullptr;
     float ratio;
 
-    int mode;
+    std::atomic<float>* mode = nullptr;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };
