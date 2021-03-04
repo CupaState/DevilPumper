@@ -1,22 +1,20 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include <JuceHeader.h>
-#include "Compressor.h"
 
+#define THRESHOLD_ID "threshold_id"
+#define THRESHOLD_NAME "threshold_name"
+#define SWITCHER_ID "switcher_id"
+#define SWITCHER_NAME "switcher_name"
+
+static const float MINVAL = 0.000001f;
+static const float MAXATTACKTIME = 0.2f;
+static const float MAXRELEASETIME = 2.0f;
 
 //==============================================================================
 /**
 */
+
 class DevilPumperInfinityAudioProcessor : public AudioProcessor
 {
 public:
@@ -32,6 +30,7 @@ public:
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 #endif
 
+    void compressorMath(AudioSampleBuffer& buffer);
     void processBlock(AudioSampleBuffer&, MidiBuffer&) override;
 
     //==============================================================================
@@ -57,53 +56,47 @@ public:
     void getStateInformation(MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    // Setter Functions for each parameter
+    // Setter Functions
 
-    void setOverallGain(float OverallGain) { pOverallGain = Decibels::decibelsToGain(OverallGain); }
-    void setKneeWidth(float KneeWidth) { pKneeWidth = KneeWidth; }
-    void setGain(float Gain) { pGain = Decibels::decibelsToGain(Gain); }
-    void setThreshold(float Threshold) { pThreshold = Threshold; }
-    void setRatio(float Ratio) { pRatio = Ratio; }
-    void setAttack(float Attack) { pAttackTime = Attack; }
-    void setRelease(float Release) { pReleaseTime = Release; }
+    void setThreshold(float threshold_UI) { *threshold = threshold_UI; }
+    float setOverallGain(float threshold) { return 1.0 - std::pow(10.0, threshold / 20.0); }
+    void setMode(float mode_UI) { *mode = mode_UI; };
 
-    void setCompressorState(int Analog) {
-        if (Analog != 0)
-        {
-            (*processorComp).m_uTimeConstant = Compressor::TimeConstant::Analog;
-        }
-        else if(Analog == 0)
-        {
-            (*processorComp).m_uTimeConstant = Compressor::TimeConstant::Digital;
-        }
-    }
     //==============================================================================
-    // Getter Functions for each parameter
+    // Getter Functions
 
-    float getOverallGain() { return Decibels::decibelsToGain(pOverallGain); }
-    float getKneeWidth() { return pKneeWidth; }
-    float getGain() { return Decibels::decibelsToGain(pGain); }
-    float getThreshold() { return pThreshold; }
-    float getRatio() { return pRatio; }
-    float getAttack() { return pAttackTime; }
-    float getReleaseTime() { return pReleaseTime; }
+    float getThreshold() { return *threshold; }
+    int getMode() { return *mode; }
+
+    juce::AudioProcessorValueTreeState parameters;
+    AudioProcessorValueTreeState::ParameterLayout createParameter();
 
 private:
 
-    ScopedPointer <Compressor> processorComp;
+    float sample_rate;
+    float input_gain;
+    float output_gain;
+    float input_level;
+    float control_voltage;
 
-    float pAttackTime;
-    float pReleaseTime;
+    float log_input_gain;
+    float log_input_level;
+    float log_threhsold;
+    float log_output_gain;
+    float log_output_level;
 
-    float pThreshold;
-    float pRatio;
-    float pKneeWidth;
+    float crest_PEAK, crest_RMS, crest_factor, average_time, alpha_average, input_square;
+    float cv_estimate, cv_dev, alpha_for_cv;
+    float log_range;
+    float cv_dev_const;
 
-    float pOverallGain;
-    float pGain;
+    float attack_time;
+    float release_time;
 
-    int numChannels;
+    std::atomic<float>* threshold = nullptr;
+    float ratio;
 
+    std::atomic<float>* mode = nullptr;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DevilPumperInfinityAudioProcessor)
 };

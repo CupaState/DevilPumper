@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -15,178 +5,84 @@
 DevilPumperInfinityAudioProcessorEditor::DevilPumperInfinityAudioProcessorEditor(DevilPumperInfinityAudioProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
-    //SLIDERS
+    sl_threshold_attach = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, THRESHOLD_ID, sl_threshold);
+    mode_attach = std::make_unique<AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters, SWITCHER_ID, mode);
+    //SLIDER
 
-    addAndMakeVisible(&slOverallGain);
-    slOverallGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slOverallGain.setTextValueSuffix("dB");
-    slOverallGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slOverallGain.setRange(-40.0, 10.0);
-    slOverallGain.setValue(0.0);
-    slOverallGain.addListener(this);
+    addAndMakeVisible(sl_threshold);
+    sl_threshold.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
+    sl_threshold.setTextValueSuffix("dB");
+    sl_threshold.setSliderStyle(Slider::SliderStyle::LinearVertical);
+    sl_threshold.setRange(-50.0, 0.0);
+    sl_threshold.setValue(processor.getThreshold());
+    sl_threshold.addListener(this);
 
-    addAndMakeVisible(&slAttackTime);
-    slAttackTime.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slAttackTime.setTextValueSuffix("ms");
-    slAttackTime.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slAttackTime.setRange(1.0, 250.0);
-    slAttackTime.setValue(5.0);
-    slAttackTime.addListener(this);
+    //BUTTON
+    mode.setButtonText("LIMITER");
+    mode.setState(Button::ButtonState::buttonNormal);
+    mode.addListener(this);
+    addAndMakeVisible(mode);
 
-    addAndMakeVisible(&slRelease);
-    slRelease.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slRelease.setTextValueSuffix("ms");
-    slRelease.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slRelease.setRange(1.0, 2500.0);
-    slRelease.setValue(25.0);
-    slRelease.addListener(this);
+    setLookAndFeel(&otherLookAndFeel);
 
-    addAndMakeVisible(&slThreshold);
-    slThreshold.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slThreshold.setTextValueSuffix("dB");
-    slThreshold.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slThreshold.setRange(-50.0, 0.0);
-    slThreshold.setValue(-0.0);
-    slThreshold.addListener(this);
-
-    addAndMakeVisible(&slRatio);
-    slRatio.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slRatio.setTextValueSuffix(" :1");
-    slRatio.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slRatio.setRange(1.0, 100.0);
-    slRatio.setValue(1.0);
-    slRatio.addListener(this);
-
-    addAndMakeVisible(&slKneeWidth);
-    slKneeWidth.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slKneeWidth.setTextValueSuffix("dB");
-    slKneeWidth.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slKneeWidth.setRange(0.0, 10.0);
-    slKneeWidth.setValue(5.0);
-    slKneeWidth.addListener(this);
-
-    addAndMakeVisible(&slGain);
-    slGain.setTextBoxStyle(Slider::TextBoxAbove, false, 100, 25);
-    slGain.setTextValueSuffix("dB");
-    slGain.setSliderStyle(Slider::SliderStyle::LinearVertical);
-    slGain.setRange(-80.0, 40.0);
-    slGain.setValue(0.0);
-    slGain.addListener(this);
-
-    //LABELS
-
-    addAndMakeVisible(lOverallGain);
-    addAndMakeVisible(lAttack);
-    addAndMakeVisible(lRelease);
-    addAndMakeVisible(lThreshold);
-    addAndMakeVisible(lRatio);
-    addAndMakeVisible(lKneeWidth);
-    addAndMakeVisible(lGain);
-
-    lOverallGain.setText("Output Gain", dontSendNotification);
-    lAttack.setText("Attack", dontSendNotification);
-    lRelease.setText("Release", dontSendNotification);
-    lThreshold.setText("Threshold", dontSendNotification);
-    lRatio.setText("Ratio", dontSendNotification);
-    lKneeWidth.setText("Knee", dontSendNotification);
-    lGain.setText("Gain", dontSendNotification);
-
-    lOverallGain.setFont(Font(15.0f, Font::plain));
-    lAttack.setFont(Font(15.0f, Font::plain));
-    lRelease.setFont(Font(15.0f, Font::plain));
-    lThreshold.setFont(Font(15.0f, Font::plain));
-    lRatio.setFont(Font(15.0f, Font::plain));
-    lKneeWidth.setFont(Font(15.0f, Font::plain));
-    lGain.setFont(Font(15.0f, Font::plain));
-
-    lOverallGain.attachToComponent(&slOverallGain, true);
-    lAttack.attachToComponent(&slAttackTime, true);
-    lRelease.attachToComponent(&slRelease, true);
-    lThreshold.attachToComponent(&slThreshold, true);
-    lRatio.attachToComponent(&slRatio, true);
-    lKneeWidth.attachToComponent(&slKneeWidth, true);
-    lGain.attachToComponent(&slGain, true);
-
-   //Buttons
-
-    addAndMakeVisible(toggleAnalog = new TextButton("Analog_Digital"));
-    toggleAnalog->setButtonText("ANALOG");
-    toggleAnalog->setColour(TextButton::buttonColourId, Colours::darkred);
-    toggleAnalog->setColour(TextButton::textColourOnId, Colours::aqua);
-    toggleAnalog->setColour(TextButton::textColourOffId, Colours::brown);
-    toggleAnalog->setColour(TextButton::buttonOnColourId, Colours::dodgerblue);
-    toggleAnalog->addMouseListener(this, false);
-
-    setSize(1500, 600);
+    setSize(200, 400);
 }
 
 DevilPumperInfinityAudioProcessorEditor::~DevilPumperInfinityAudioProcessorEditor()
 {
-
+    setLookAndFeel(nullptr);
 }
 
 //==============================================================================
 void DevilPumperInfinityAudioProcessorEditor::paint(Graphics& g)
 {
-    /*Image background = ImageCache::getFromMemory(BinaryData::BACK_jpg, BinaryData::BACK_jpgSize);
+    Image background = ImageCache::getFromMemory(BinaryData::BACK_jpg, BinaryData::BACK_jpgSize);
     g.drawImageAt(background, 0, 0);
-    g.setFont(15.0f);
-    g.drawFittedText("DevilPumper", getWidth() / 2 - 75, 0, 150, getWidth() / 2 - 75, Justification::centred, 1);*/
-    g.fillAll(Colours::black);
+
+    auto edge = 2;
+    auto button_area = mode.getLocalBounds();
+    mode.setColour(juce::TextButton::ColourIds::buttonColourId, Colours::brown);
+    mode.setColour(juce::TextButton::textColourOffId, Colours::blanchedalmond);
+    // shadow
+    g.setColour(juce::Colours::beige.withAlpha(0.5f));
 }
 
 void DevilPumperInfinityAudioProcessorEditor::resized()
 {
-    juce::Rectangle<int>bounds = getLocalBounds();
+    auto border = 4;
+    Rectangle<int>bounds = getLocalBounds();
     FlexBox flexBox;
 
-    flexBox.items.add(FlexItem(200, 100, slOverallGain));
-    flexBox.items.add(FlexItem(200, 100, slAttackTime));
-    flexBox.items.add(FlexItem(200, 100, slThreshold));
-    flexBox.items.add(FlexItem(200, 100, slRelease));
-    flexBox.items.add(FlexItem(200, 100, slRatio));
-    flexBox.items.add(FlexItem(200, 100, slKneeWidth));
-    flexBox.items.add(FlexItem(200, 100, slGain));
+    flexBox.items.add(FlexItem(200, 100, sl_threshold));
 
-    flexBox.items.add(FlexItem(50, 20, *toggleAnalog));
+    auto button_height = 30;
+
+    mode.setBounds(bounds.removeFromBottom(button_height).reduced(border));
 
     flexBox.performLayout(bounds);
 }
 
 void DevilPumperInfinityAudioProcessorEditor::sliderValueChanged(Slider* slider)
 {
-    if (slider == &slOverallGain)
+    if (slider == &sl_threshold)
     {
-        processor.setOverallGain(slOverallGain.getValue());
-    }
-    else if (slider == &slAttackTime)
-    {
-        processor.setAttack(slAttackTime.getValue());
-    }
-    else if (slider == &slRelease)
-    {
-        processor.setRelease(slRelease.getValue());
-    }
-    else if (slider == &slThreshold)
-    {
-        processor.setThreshold(slThreshold.getValue());
-    }
-    else if (slider == &slRatio)
-    {
-        processor.setRatio(slRatio.getValue());
-    }
-    else if (slider == &slKneeWidth)
-    {
-        processor.setKneeWidth(slKneeWidth.getValue());
-    }
-    else if (slider == &slGain)
-    {
-        processor.setGain(slGain.getValue());
+        processor.setThreshold(sl_threshold.getValue());
     }
 }
 
-
-void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* button)
+void DevilPumperInfinityAudioProcessorEditor::buttonClicked(Button* click)
 {
-    processor.setCompressorState(static_cast<int>(toggleAnalog->getToggleState()));
+    if (click == &mode)
+    {
+        if (processor.getMode() == 0)
+        {
+            processor.setMode(1.0f);
+            mode.setButtonText("COMPRESSOR");
+        }
+        else
+        {
+            processor.setMode(0.0f);
+            mode.setButtonText("LIMITER");
+        }
+    }
 }
