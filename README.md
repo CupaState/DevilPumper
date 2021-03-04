@@ -12,7 +12,7 @@ Phone: +7(968)768-79-76
 E-mail: cupastate@gmail.com
 
 ***
-You can also download the VST version of this plugin from this repository or follow the link: https://drive.google.com/file/d/14y4HLPpu8duAGyim0jM1r6nzLNJk3fNo/view?usp=sharing
+You can also download the VST version of this plugin from this repository or follow the link: https://drive.google.com/file/d/1uJPe9usi1xr4RixgcX8j6P-sPv0N8yt3/view?usp=sharing
 <br> For using plug-in: take the DevilPumperVST3 folder and place it in the folder where the rest of the VST3s are stored. In your DAW navigate to the folder with DevilPumperVST3.
 ***
 
